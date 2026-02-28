@@ -34,6 +34,10 @@ on a daily basis, and our kWh estimate will be converted to money using a consta
 
 This will all be calculated per tile
 
-
+Flow is calculated based on water demand, which is on a scale from 1 to 10, and is calculated as follows:
+2100 + 546(n), where n is the water demand value
+Our numbers come from the following source, https://resources.hy-techroof.com/blog/how-much-water-can-flow-through-a-pipe
+Where we use 2100 as the lowest water pressure which would stand-in for low water demand and 7560 for high water demand
+Water demand changes linearly, increasing by 546gph as it goes up each demand number. We are using GPH as we calculated hourly flow.
 
 

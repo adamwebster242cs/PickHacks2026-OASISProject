@@ -135,6 +135,11 @@ def next_res_cost(Reservoirs, Water_Demand):
 
     return total
 
+def get_best_resevoir_location(city_map, Reservoirs, Water_Demand):
+    best_location = (0, 0)
+    
+
+
 # Call your function with a starting position
 #visualize_city(city_map, 25, 25)
 
