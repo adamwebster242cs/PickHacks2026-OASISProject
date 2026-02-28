@@ -29,8 +29,8 @@ def calculateTotalSystemCost():
 def visualizeCity():
     return
 
-def transport_cost(distance, demand): #Cost = L * Q^2 => distance * demand^2 ; I'm assuming our flow rate is constant, and i added a weight on the demand
-    return distance * (demand ** 2)
+def transport_cost(transport_power, power_cost): #Cost = L * Q^2 => distance * demand^2 ; I'm assuming our flow rate is constant, and i added a weight on the demand
+    return (transport_power * 24) * power_cost #Returns the daily cost of transporting water in dollars, from kilowatt hours
 
 def single_res_cost(reservoir, Water_Demand): #Takes in reservoir location and water demands dictionary to comput cost of original reservoir
     total = 0
