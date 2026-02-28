@@ -1,0 +1,39 @@
+Using Hazen-Williams equation to determine pressure loss due to pipe friction for water
+P_loss = Pressure loss due to friction (psi) - Value to calculate
+L = Pipe length (chosen unit) - Will be a constant value represented by each tile
+Q = Flow rate of water inside pipe (gpm) - Will be a constant value decided by group
+C = Pipe coefficient - Will make assumption that all pipes are same material (assuming Aluminum -> 120)
+Di = Pipe inside diameter - Will use an average constant value
+
+P_loss is to be calculated individually for each tile in a 2-d array based on the distance of said tile from our main "resivoir" tile
+P_loss will be recalculated after algorithmically placing our "pump" tile
+
+Distance = Pipe length multiplied by tile-distance from the nearest "pump" or "resevoir"
+
+We need our pressure loss at the furthest tile from a pump to be equal to a minimum required pressure-
+So that we can calculate the required starting pump pressure needed to keep our pressure at the tile-
+above the minimum value. Using this required pressure value, we calculate the energy needed and convert-
+said energy into a term that can be somewhat comparable to kilowatt hours which are used for calculating-
+price of energy consumption.
+
+To find our initial starting pressure that will allow us to reach a distance with a certain minimum value-
+we first must find that minimum value. For our program, we will assume average  recommended household water-
+pressure, which is 50 psi. Our P_loss must be equal to 50 psi.
+
+We will calculate our P_loss for each individual tile based on it's calculated distance from it's furthest tile.
+Once our distance is calculated and our maximum P_loss is calculated, our necessary starting pressure will be
+equal to our maximum P_loss + our 50 psi minimum pressure.
+
+Using the Hydraulic Pump Power equation, our variables are as follows:
+P_h(kW) is our hydraulic power in terms of kilowatts
+q is our flow, this will be randomly generated and will refer to the water consumption per tile
+p is our P_loss calculated per tile, converted from psi to N/m^2
+
+Our output will be converted from Kilowatts to Kilowatt hours by multiplying our kW output by 24, as cost is calculated-
+on a daily basis, and our kWh estimate will be converted to money using a constant conversion rate
+
+This will all be calculated per tile
+
+
+
+
