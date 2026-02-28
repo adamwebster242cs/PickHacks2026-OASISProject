@@ -62,7 +62,7 @@ def populate_urban_bloom(grid, centers, max_demand, decay_rate):
 
             #fill grid with random integers
             Water_Demand[(x, y)] = random.randint(1, 10) #I just used 10 as the highest demand - Jacob
-
+            Water_Demand[(x, y)] = grid[y][x]
             #formula for conversion of water_demand to actual_water_demand = 2100+546(water_demand) 
 
     return Water_Demand #Returns the dictionary 
@@ -83,22 +83,29 @@ def calculateTotalSystemCost(grid, resX, resY):
     
     return total_cost
 
-def getReservoirDistance(location, reservoir, Reservoirs): #will need to be changed to include actual values of reservoir
-    #manhattan distance
-    x1, y1 = location(x1, y1)
-    x2, y2 = Reservoirs(reservoir)
-    return abs(x1[0] - x2[0]) + abs(y1[1] - y2[1])
+def getReservoirDistance(location, reservoir_key, Reservoirs):
+    # 1. location is a tuple (x, y) from Water_Demand
+    x1, y1 = location 
+    
+    # 2. reservoir_key is the string "Reservoir 1"
+    # 3. Reservoirs[reservoir_key] gives us the tuple (rx, ry)
+    x2, y2 = Reservoirs[reservoir_key]
+    
+    return abs(x1 - x2) + abs(y1 - y2)
 
 def get_nearest_reservoir(location, Reservoirs):
-    nearest_reservoir = 0
-
-    distance = getReservoirDistance(location, Reservoirs[0])
-    for reservoir in Reservoirs:
-        distance_from_reservoir = getReservoirDistance(location, reservoir)
-        if distance_from_reservoir < distance:
-            nearest_reservoir = reservoir
-            distance = distance_from_reservoir
-        
+    res_list = list(Reservoirs.keys())
+    nearest_reservoir = res_list[0]
+    
+    # Initialize with the distance to the first reservoir
+    min_dist = getReservoirDistance(location, nearest_reservoir, Reservoirs)
+    
+    for res_key in res_list:
+        d = getReservoirDistance(location, res_key, Reservoirs)
+        if d < min_dist:
+            min_dist = d
+            nearest_reservoir = res_key
+            
     return nearest_reservoir
 
 def get_pressure_loss(distance_from_reservoir, actual_tile_water_demand):
@@ -114,17 +121,19 @@ def get_transport_power(pressure_loss, actual_tile_water_demand):
 def get_transport_cost(transport_power, power_cost): #Cost = L * Q^2 => distance * demand^2 ; I'm assuming our flow rate is constant, and i added a weight on the demand
     return (transport_power * 24) * power_cost #Returns the daily cost of transporting water in dollars, from kilowatt hours
 
-def single_res_cost(reservoir, Water_Demand, Reservoirs):
+def single_res_cost(reservoir_name, Water_Demand, Reservoirs):
     total = 0
-
+    # Use the name/key to look up the reservoir in the function below
     for location, demand in Water_Demand.items():
-        distance = getReservoirDistance(location, reservoir, Reservoirs)
-        actual_demand = 2100 + (546*demand)
+        # Pass the string name "Reservoir 1", not the coordinates
+        distance = getReservoirDistance(location, reservoir_name, Reservoirs)
+        
+        # ... rest of your math ...
+        actual_demand = 2100 + (546 * demand)
         pressure_loss = get_pressure_loss(distance, actual_demand)
         transport_power = get_transport_power(pressure_loss, actual_demand)
-        transport_cost = get_transport_cost(transport_power, 0.12) #Assuming power cost of 12 cents per kWh
+        transport_cost = get_transport_cost(transport_power, 0.12)
         total += transport_cost
-
     return total
 
 def next_res_cost(Reservoirs, Water_Demand):
@@ -186,10 +195,6 @@ populate_urban_bloom(city_map, downtowns, 10, 0.5)
 test_cost = calculateTotalSystemCost(city_map, 25, 25)
 print(f"Total transportation cost for reservoir at (25,25): {test_cost}")
 
-plt.ion()
-
-plt.show(block=True)
-
 if __name__ == "__main__":
 
     randx = random.randint(1, 49)
@@ -200,4 +205,7 @@ if __name__ == "__main__":
     for reservoir in Reservoirs:
         print("Reservoir at:", reservoir)
 
-    print(single_res_cost(Reservoirs["Reservoir 1"], Water_Demand, Reservoirs))
+    print(single_res_cost("Reservoir 1", Water_Demand, Reservoirs))
+
+    plt.ion()
+    plt.show(block=True)
