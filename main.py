@@ -54,6 +54,14 @@ def populate_urban_bloom(grid, centers, max_demand, decay_rate):
                     "High Demand": 1.25
                 }
 
+                demand_type = random.choices(list(Possible_Demand.keys()), weights=Possible_Demand.values(), k=1)[0]
+                if demand_type == "Low Demand":
+                    grid[y][x] = random.randint(1, 3)
+                elif demand_type == "Medium Demand":
+                    grid[y][x] = random.randint(4, 7)
+                elif demand_type == "High Demand":
+                    grid[y][x] = random.randint(8, 10)
+
             #fill grid with random integers
             Water_Demand[(x, y)] = random.randint(1, 10) #I just used 10 as the highest demand - Jacob
 
@@ -77,7 +85,7 @@ def calculateTotalSystemCost(grid, resX, resY):
     
     return total_cost
 
-def getDistance(location, reservoir): #will need to be changed to include actual values of reservoir
+def getReservoirDistance(location, reservoir): #will need to be changed to include actual values of reservoir
     #manhattan distance
     x1, y1 = location(x1, y1)
     x2, y2 = reservoir(x2, y2)
@@ -86,9 +94,9 @@ def getDistance(location, reservoir): #will need to be changed to include actual
 def get_nearest_reservoir(location, Reservoirs):
     nearest_reservoir = 0
 
-    distance = getDistance(location, Reservoirs[0])
+    distance = getReservoirDistance(location, Reservoirs[0])
     for reservoir in Reservoirs:
-        distance_from_reservoir = getDistance(location, reservoir)
+        distance_from_reservoir = getReservoirDistance(location, reservoir)
         if distance_from_reservoir < distance:
             nearest_reservoir = reservoir
             distance = distance_from_reservoir
@@ -112,7 +120,7 @@ def single_res_cost(reservoir, Water_Demand):
     total = 0
 
     for location, demand in Water_Demand.items():
-        distance = getDistance(location, reservoir)
+        distance = getReservoirDistance(location, reservoir)
         actual_demand = 2100 + (546*demand)
         pressure_loss = get_pressure_loss(distance, actual_demand)
         transport_power = get_transport_power(pressure_loss, actual_demand)
@@ -126,7 +134,7 @@ def next_res_cost(Reservoirs, Water_Demand):
 
     for location, demand in Water_Demand.items():
         nearest_reservoir = get_nearest_reservoir(location, Reservoirs)
-        distance = getDistance(location, nearest_reservoir)
+        distance = getReservoirDistance(location, nearest_reservoir)
         actual_demand = 2100 + (546*demand)
         pressure_loss = get_pressure_loss(distance, actual_demand)
         transport_power = get_transport_power(pressure_loss, actual_demand)
@@ -138,7 +146,20 @@ def next_res_cost(Reservoirs, Water_Demand):
 def get_best_resevoir_location(city_map, Reservoirs, Water_Demand):
     best_location = (0, 0)
     
-
+def visualize_city(grid, resX, resY):
+    plt.clf() # Clear the previous frame
+    
+    # Display the demand density
+    plt.imshow(grid, cmap='magma', origin='upper')
+    plt.colorbar(label='Water Demand')
+    
+    # Plot the reservoir as a bright blue star
+    plt.plot(resX, resY, 'c*', markersize=15, label='Reservoir')
+    
+    plt.title(f"Reservoir Optimization - Current Pos: ({resX}, {resY})")
+    plt.legend()
+    plt.draw()
+    plt.pause(0.05) # Brief pause to create animation effect
 
 # Call your function with a starting position
 #visualize_city(city_map, 25, 25)
@@ -168,3 +189,7 @@ test_cost = calculateTotalSystemCost(city_map, 25, 25)
 print(f"Total transportation cost for reservoir at (25,25): {test_cost}")
 
 plt.ion()
+
+visualize_city(city_map, random.randint(1, 49), random.randint(1, 49))
+
+plt.show(block=True)
