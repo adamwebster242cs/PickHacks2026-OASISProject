@@ -3,6 +3,13 @@ import matplotlib.pyplot as plt
 
 #Lets make sure use a lot of comments on our code, so we can easily explain it if asked about it. We can also use these comments to help us remember what we were thinking when we wrote the code, and to help us debug it later on if we need to.
 
+width = 10 #in kilometers
+height = 10 #in kilometers
+Reservoirs = {}
+#res_x = random.randint(0, width)
+#res_y = random.randint(0, height)
+#Reservoirs[(res_x, res_y)] = 0
+
 def buildGrid(width, height):
     Water_Demand = {} #Create a dictionary to stroe value
 
@@ -11,13 +18,28 @@ def buildGrid(width, height):
 
             #fill grid with random integers
             Water_Demand[(x, y)] = random.randint(1, 10) #I just used 10 as the highest demand - Jacob
+
             #formula for conversion of water_demand to actual_water_demand = 2100+546(water_demand) 
 
     return Water_Demand #Returns the dictionary 
 
-def getDistance(x1, y1, x2, y2): #will need to be changed to include actual values of reservoir
+def getDistance(location, reservoir): #will need to be changed to include actual values of reservoir
     #manhattan distance
+    x1, y1 = location(x1, y1)
+    x2, y2 = reservoir(x2, y2)
     return abs(x1[0] - x2[0]) + abs(y1[1] - y2[1])
+
+def get_nearest_reservoir(location, Reservoirs):
+    nearest_reservoir = 0
+
+    distance = getDistance(location, Reservoirs[0])
+    for reservoir in Reservoirs:
+        distance_from_reservoir = getDistance(location, reservoir)
+        if distance_from_reservoir < distance:
+            nearest_reservoir = reservoir
+            distance = distance_from_reservoir
+        
+    return nearest_reservoir
 
 # If we use a function like this, we can cause whats called Urban Bloom, where we mark high cost areas initially, and the areas around it gradually decrease in cost. Causing an effect like a real cities' demand for something like this.
 def urbanBloom():
@@ -31,7 +53,7 @@ def visualizeCity():
     return
 
 def get_pressure_loss(distance_from_reservoir, actual_tile_water_demand):
-    pipe_length = distance_from_reservoir
+    pipe_length = distance_from_reservoir * 3280.84 #convert kilometers to feet, since the formula uses feet
     flow_rate = actual_tile_water_demand
     pipe_coefficient = 120 #assume Aluminum pipes with couplers, can be changed if needed
     pipe_inside_diameter = 1.5 #assume 1.5 inch diameter
@@ -52,6 +74,20 @@ def single_res_cost(reservoir, Water_Demand): #Takes in reservoir location and w
         pressure_loss = get_pressure_loss(distance, actual_demand)
         transport_power = get_transport_power(pressure_loss, actual_demand)
         transport_cost = get_transport_cost(transport_power, 0.12) #Assuming power cost of 12 cents per kWh
+        total += transport_cost
+
+    return total
+
+def next_res_cost(Reservoirs, Water_Demand):
+    total = 0
+
+    for location, demand in Water_Demand.items():
+        nearest_reservoir = get_nearest_reservoir(location, Reservoirs)
+        distance = getDistance(location, nearest_reservoir)
+        actual_demand = 2100 + (546*demand)
+        pressure_loss = get_pressure_loss(distance, actual_demand)
+        transport_power = get_transport_power(pressure_loss, actual_demand)
+        transport_cost = get_transport_cost(transport_power, 0.12)
         total += transport_cost
 
     return total
