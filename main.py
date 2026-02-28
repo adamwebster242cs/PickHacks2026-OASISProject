@@ -115,5 +115,4 @@ plt.ion()
 # Call your function with a starting position
 visualize_city(city_map, 25, 25)
 
-# This keeps the window open until you manually close it
-plt.show(block=True)
+    return total
