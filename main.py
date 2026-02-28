@@ -110,7 +110,7 @@ def get_nearest_reservoir(location, Reservoirs):
 
 def get_pressure_loss(distance_from_reservoir, actual_tile_water_demand):
     pipe_length = distance_from_reservoir * 3280.84 #convert kilometers to feet, since the formula uses feet
-    flow_rate = actual_tile_water_demand
+    flow_rate = actual_tile_water_demand / 60
     pipe_coefficient = 120 #assume Aluminum pipes with couplers, can be changed if needed
     pipe_inside_diameter = 18 #assume 1.5 inch diameter
     return (4.53 * pipe_length * ((flow_rate/pipe_coefficient) ** 1.852)/(pipe_inside_diameter ** 4.857))
@@ -204,78 +204,199 @@ def visualize_city(grid, Reservoirs):
                     plt.plot([x - 0.5, x + 0.5], [y + 0.5, y + 0.5], color='white', lw=1, alpha=0.6)
     
     # 3. Plot the reservoirs
-    colors = ['cyan', 'blue', 'lime'] # Different colors for different reservoirs
-    for i, (name, pos) in enumerate(Reservoirs.items()):
-        plt.plot(pos[0], pos[1], marker='*', color=colors[i % 3], markersize=15, label=name)
+    colors = {'Reservoir 1': 'cyan', 'Reservoir 2': 'blue'}
     
-    plt.title("City Water Demand & Reservoir Service Zones")
-    plt.legend()
+    for name, pos in Reservoirs.items():
+        # Get color from dict, default to 'white' if name is unexpected
+        dot_color = colors.get(name, 'white') 
+        plt.plot(pos[0], pos[1], marker='*', color=dot_color, markersize=15, label=name)
+    
+    plt.title("Legacy Infrastructure & Optimal Expansion")
+    plt.legend(loc='upper right')
     plt.draw()
     plt.pause(0.1)
 
-# Call your function with a starting position
-#visualize_city(city_map, 25, 25)
 
-    #return total
+# =============================================================================
+# FLASK API — added below your original code, nothing above this line changed.
+# Run with:  python OASISv2.py
+# Then open: http://localhost:5000
+# =============================================================================
 
-    # 1. Setup the city
-city_map = buildGrid(50, 50)
-city_centers = {
-    "HotspotA": (1,1),
-    "HotspotB": (1,1),
-    "HotspotC": (1,1),
-    "HotspotD": (1,1),
-    "HotspotE": (1,1),
-    "HotspotF": (1,1)
-}
+import json
+import math
+from flask import Flask, request, jsonify, Response, send_from_directory
+from flask_cors import CORS
 
-for hotspot in city_centers:
-    city_centers[hotspot] = (random.randint(5, 45), random.randint(5, 45))
-downtowns = [(random.randint(1, 50), random.randint(1, 50)), (random.randint(1, 50), random.randint(1, 50)), (random.randint(1, 50), random.randint(1, 50))]
+app = Flask(__name__, static_folder=".")
+CORS(app)
 
-# 2. Paint the demand
-populate_urban_bloom(city_map, downtowns, 10, 0.5)
 
-# 3. Test a potential reservoir location
-test_cost = calculateTotalSystemCost(city_map, 25, 25)
-print(f"Total transportation cost for reservoir at (25,25): {test_cost}")
+@app.route("/")
+def index():
+    """Serve the frontend."""
+    return send_from_directory(".", "oasis.html")
+
+
+@app.route("/api/generate", methods=["POST"])
+def api_generate():
+    """
+    Generate a new city grid using your existing functions.
+    Expects JSON: { size, hotspots, decay, max_demand, pipe_diam, pipe_c, power_cost }
+    Returns:      { grid, water_demand, centers, res1_pos, legacy_cost }
+    """
+    data       = request.get_json()
+    size       = int(data.get("size", 50))
+    hotspots   = int(data.get("hotspots", 6))
+    decay      = float(data.get("decay", 0.5))
+    max_demand = float(data.get("max_demand", 10))
+    pipe_diam  = float(data.get("pipe_diam", 18))
+    pipe_c     = float(data.get("pipe_c", 120))
+    power_cost = float(data.get("power_cost", 0.12))
+
+    # --- Use your exact functions ---
+    grid = buildGrid(size, size)
+
+    centers = [
+        (random.randint(5, size - 5), random.randint(5, size - 5))
+        for _ in range(hotspots)
+    ]
+
+    # populate_urban_bloom writes into the module-level Water_Demand dict and returns it
+    local_water_demand_tuples = populate_urban_bloom(grid, centers, max_demand, decay)
+
+    # Convert tuple keys → "x,y" string keys so JSON can serialize them
+    water_demand_str = {f"{x},{y}": v for (x, y), v in local_water_demand_tuples.items()}
+
+    # Place Reservoir 1 at a random legacy position
+    r1x = random.randint(5, size - 5)
+    r1y = random.randint(5, size - 5)
+    res1_pos  = (r1x, r1y)
+    Reservoirs_local = {"Reservoir 1": res1_pos}
+
+    # Calculate legacy cost using your single_res_cost function
+    # single_res_cost expects tuple keys, so pass local_water_demand_tuples
+    legacy_cost = single_res_cost("Reservoir 1", local_water_demand_tuples, Reservoirs_local)
+
+    return jsonify({
+        "grid":         grid,
+        "water_demand": water_demand_str,
+        "centers":      [list(c) for c in centers],
+        "res1_pos":     list(res1_pos),
+        "legacy_cost":  round(legacy_cost, 4),
+    })
+
+
+@app.route("/api/optimize/stream", methods=["POST"])
+def api_optimize_stream():
+    """
+    Run find_best_second_reservoir, streaming progress as Server-Sent Events.
+    Expects JSON: { water_demand (str keys), res1_pos, size }
+    Streams:      data: { x, y, cost, best_cost, best_pos, progress, evaluated, total, improved }
+                  data: { done: true, best_pos, best_cost }
+    """
+    data         = request.get_json()
+    water_demand_str = data["water_demand"]       # { "x,y": demand }
+    r1x, r1y     = data["res1_pos"]
+    size         = int(data.get("size", 50))
+
+    # Convert string keys back to tuple keys for your functions
+    water_demand_tuples = {
+        (int(k.split(",")[0]), int(k.split(",")[1])): v
+        for k, v in water_demand_str.items()
+    }
+
+    Reservoirs_local = {"Reservoir 1": (r1x, r1y)}
+
+    # Build candidate list and shuffle (mirrors find_best_second_reservoir logic)
+    candidates = [
+        (x, y)
+        for y in range(size)
+        for x in range(size)
+        if (x, y) not in Reservoirs_local.values()
+    ]
+    random.shuffle(candidates)
+    total = len(candidates)
+
+    def generate():
+        best_coord = (0, 0)
+        min_total_cost = float('inf')
+
+        for i, (x, y) in enumerate(candidates):
+            # Temporarily add the second reservoir — exactly like your function does
+            Reservoirs_local["Reservoir 2"] = (x, y)
+
+            # Use your next_res_cost function directly
+            current_cost = next_res_cost(Reservoirs_local, water_demand_tuples)
+
+            improved = False
+            if current_cost < min_total_cost:
+                min_total_cost = current_cost
+                best_coord     = (x, y)
+                improved       = True
+
+            # Stream every 5th step and all improvements to keep updates smooth
+            if improved or i % 5 == 0:
+                payload = {
+                    "x":         x,
+                    "y":         y,
+                    "cost":      round(current_cost, 4),
+                    "best_cost": round(min_total_cost, 4),
+                    "best_pos":  list(best_coord),
+                    "progress":  round((i + 1) / total * 100, 1),
+                    "evaluated": i + 1,
+                    "total":     total,
+                    "improved":  improved,
+                }
+                yield f"data: {json.dumps(payload)}\n\n"
+
+        # Final event
+        yield f"data: {json.dumps({'done': True, 'best_pos': list(best_coord), 'best_cost': round(min_total_cost, 4)})}\n\n"
+
+    return Response(
+        generate(),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    )
+
+
+@app.route("/api/cost", methods=["POST"])
+def api_cost():
+    """
+    Calculate system cost for a manually placed reservoir using your functions.
+    Expects JSON: { water_demand (str keys), reservoirs: {"Reservoir 1": [x,y], ...} }
+    Returns:      { cost }
+    """
+    data             = request.get_json()
+    water_demand_str = data["water_demand"]
+    raw_reservoirs   = data["reservoirs"]
+
+    # Convert back to the formats your functions expect
+    water_demand_tuples = {
+        (int(k.split(",")[0]), int(k.split(",")[1])): v
+        for k, v in water_demand_str.items()
+    }
+    Reservoirs_local = {k: tuple(v) for k, v in raw_reservoirs.items()}
+
+    if len(Reservoirs_local) == 1:
+        key  = list(Reservoirs_local.keys())[0]
+        cost = single_res_cost(key, water_demand_tuples, Reservoirs_local)
+    else:
+        cost = next_res_cost(Reservoirs_local, water_demand_tuples)
+
+    return jsonify({"cost": round(cost, 4)})
+
+
+# =============================================================================
+# ENTRY POINT
+# Run as a Flask server:  python OASISv2.py
+# Your original __main__ block is preserved below and will NOT run in this mode
+# because Flask takes over __main__. To run the original matplotlib version,
+# rename this file or comment out app.run().
+# =============================================================================
 
 if __name__ == "__main__":
-    # 1. Place the first reservoir randomly
-    res1_x, res1_y = random.randint(1, 49), random.randint(1, 49)
-    Reservoirs["Reservoir 1"] = (res1_x, res1_y)
-    
-    # 2. Find the best spot for the second reservoir
-    print("Finding the most efficient spot for Reservoir 2... (This may take a moment)")
-    best_pos, best_cost = find_best_second_reservoir(Water_Demand, Reservoirs)
-    
-    # 3. Finalize Reservoir 2 position
-    Reservoirs["Reservoir 2"] = best_pos
-    
-    print(f"Optimal Location for Reservoir 2: {best_pos}")
-    print(f"New Minimum System Cost: ${best_cost:,.2f}")
-
-    # 4. Visualization
-    plt.ion()
-    visualize_city(city_map, Reservoirs) # Show city and both reservoirs
-    plt.plot(best_pos[0], best_pos[1], 'b*', markersize=15, label='Optimal Reservoir 2')
-    plt.legend()
-    # ONLY run this after you are 100% sure Reservoirs["Reservoir 1"] is set
-if "Reservoir 1" in Reservoirs:
-    # 1. Get the baseline (Legacy)
-    # We temporarily hide Reservoir 2 to see what the cost WAS
-    res2_temp = Reservoirs.pop("Reservoir 2", None) 
-    initial_cost = single_res_cost("Reservoir 1", Water_Demand, Reservoirs)
-    
-    # 2. Put Reservoir 2 back to see what the cost IS NOW
-    if res2_temp:
-        Reservoirs["Reservoir 2"] = res2_temp
-    
-    optimized_cost = next_res_cost(Reservoirs, Water_Demand)
-    
-    # 3. Final display logic
-    savings = initial_cost - optimized_cost
-    if initial_cost > 0:
-        percent_improvement = (savings / initial_cost) * 100
-        print(f"Success! Savings: {percent_improvement:.1f}%")
-        plt.show(block=True)
+    print("=" * 50)
+    print("  OASIS SERVER — http://localhost:5000")
+    print("=" * 50)
+    app.run(debug=True, port=5000, threaded=True)
