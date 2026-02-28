@@ -24,6 +24,7 @@ def getDistance(xA, yA, xB, yB):
     return abs(xA - xB) + abs(yA - yB)
 
 def populate_urban_bloom(grid, centers, max_demand, decay_rate):
+    Water_Demand = {}
     height = len(grid)
     width = len(grid[0])
 
@@ -60,6 +61,22 @@ def populate_urban_bloom(grid, centers, max_demand, decay_rate):
 
     return Water_Demand #Returns the dictionary 
 
+def calculateTotalSystemCost(grid, resX, resY):
+    """Sums up the 'Price' of sending water to every building from (resX, resY)."""
+    total_cost = 0
+    height = len(grid)
+    width = len(grid[0])
+    
+    for y in range(height):
+        for x in range(width):
+            demand = grid[y][x]
+            if demand > 0:
+                dist = getDistance(x, y, resX, resY)
+                # Cost = Distance * Volume (Demand)
+                total_cost += (dist * demand)
+    
+    return total_cost
+
 def getDistance(location, reservoir): #will need to be changed to include actual values of reservoir
     #manhattan distance
     x1, y1 = location(x1, y1)
@@ -78,19 +95,6 @@ def get_nearest_reservoir(location, Reservoirs):
         
     return nearest_reservoir
 
-
-
-# 1. Setup the city
-city_map = buildGrid(50, 50)
-city_centers = {
-    "HotspotA": (1,1),
-    "HotspotB": (1,1),
-    "HotspotC": (1,1),
-    "HotspotD": (1,1),
-    "HotspotE": (1,1),
-    "HotspotF": (1,1)
-}
-
 def get_pressure_loss(distance_from_reservoir, actual_tile_water_demand):
     pipe_length = distance_from_reservoir * 3280.84 #convert kilometers to feet, since the formula uses feet
     flow_rate = actual_tile_water_demand
@@ -103,18 +107,9 @@ def get_transport_power(pressure_loss, actual_tile_water_demand):
 
 def get_transport_cost(transport_power, power_cost): #Cost = L * Q^2 => distance * demand^2 ; I'm assuming our flow rate is constant, and i added a weight on the demand
     return (transport_power * 24) * power_cost #Returns the daily cost of transporting water in dollars, from kilowatt hours
-for hotspot in city_centers:
-    city_centers[hotspot] = (random.randint(5, 45), random.randint(5, 45))
-downtowns = [(random.randint(1, 50), random.randint(1, 50)), (random.randint(1, 50), random.randint(1, 50)), (random.randint(1, 50), random.randint(1, 50))]
 
-# 2. Paint the demand
-populate_urban_bloom(city_map, downtowns, 10, 0.5)
-
-# 3. Test a potential reservoir location
-test_cost = calculateTotalSystemCost(city_map, 25, 25)
-print(f"Total transportation cost for reservoir at (25,25): {test_cost}")
-
-plt.ion() 
+def single_res_cost(reservoir, Water_Demand):
+    total = 0
 
     for location, demand in Water_Demand.items():
         distance = getDistance(location, reservoir)
@@ -123,8 +118,6 @@ plt.ion()
         transport_power = get_transport_power(pressure_loss, actual_demand)
         transport_cost = get_transport_cost(transport_power, 0.12) #Assuming power cost of 12 cents per kWh
         total += transport_cost
-# Call your function with a starting position
-visualize_city(city_map, 25, 25)
 
     return total
 
@@ -141,3 +134,32 @@ def next_res_cost(Reservoirs, Water_Demand):
         total += transport_cost
 
     return total
+
+# Call your function with a starting position
+#visualize_city(city_map, 25, 25)
+
+    #return total
+
+    # 1. Setup the city
+city_map = buildGrid(50, 50)
+city_centers = {
+    "HotspotA": (1,1),
+    "HotspotB": (1,1),
+    "HotspotC": (1,1),
+    "HotspotD": (1,1),
+    "HotspotE": (1,1),
+    "HotspotF": (1,1)
+}
+
+for hotspot in city_centers:
+    city_centers[hotspot] = (random.randint(5, 45), random.randint(5, 45))
+downtowns = [(random.randint(1, 50), random.randint(1, 50)), (random.randint(1, 50), random.randint(1, 50)), (random.randint(1, 50), random.randint(1, 50))]
+
+# 2. Paint the demand
+populate_urban_bloom(city_map, downtowns, 10, 0.5)
+
+# 3. Test a potential reservoir location
+test_cost = calculateTotalSystemCost(city_map, 25, 25)
+print(f"Total transportation cost for reservoir at (25,25): {test_cost}")
+
+plt.ion()
