@@ -3,11 +3,10 @@ import matplotlib.pyplot as plt
 
 #Lets make sure use a lot of comments on our code, so we can easily explain it if asked about it. We can also use these comments to help us remember what we were thinking when we wrote the code, and to help us debug it later on if we need to.
 
-width = 10 #in kilometers
-height = 10 #in kilometers
 Reservoirs = {}
+Water_Demand = {}
 #res_x = random.randint(0, width)
-#res_y = random.randint(0, height)
+#res_y = random.randint(0, pyheight)
 #Reservoirs[(res_x, res_y)] = 0
 
 def buildGrid(width, height):
@@ -24,7 +23,6 @@ def getDistance(xA, yA, xB, yB):
     return abs(xA - xB) + abs(yA - yB)
 
 def populate_urban_bloom(grid, centers, max_demand, decay_rate):
-    Water_Demand = {}
     height = len(grid)
     width = len(grid[0])
 
@@ -85,10 +83,10 @@ def calculateTotalSystemCost(grid, resX, resY):
     
     return total_cost
 
-def getReservoirDistance(location, reservoir): #will need to be changed to include actual values of reservoir
+def getReservoirDistance(location, reservoir, Reservoirs): #will need to be changed to include actual values of reservoir
     #manhattan distance
     x1, y1 = location(x1, y1)
-    x2, y2 = reservoir(x2, y2)
+    x2, y2 = Reservoirs(reservoir)
     return abs(x1[0] - x2[0]) + abs(y1[1] - y2[1])
 
 def get_nearest_reservoir(location, Reservoirs):
@@ -116,11 +114,11 @@ def get_transport_power(pressure_loss, actual_tile_water_demand):
 def get_transport_cost(transport_power, power_cost): #Cost = L * Q^2 => distance * demand^2 ; I'm assuming our flow rate is constant, and i added a weight on the demand
     return (transport_power * 24) * power_cost #Returns the daily cost of transporting water in dollars, from kilowatt hours
 
-def single_res_cost(reservoir, Water_Demand):
+def single_res_cost(reservoir, Water_Demand, Reservoirs):
     total = 0
 
     for location, demand in Water_Demand.items():
-        distance = getReservoirDistance(location, reservoir)
+        distance = getReservoirDistance(location, reservoir, Reservoirs)
         actual_demand = 2100 + (546*demand)
         pressure_loss = get_pressure_loss(distance, actual_demand)
         transport_power = get_transport_power(pressure_loss, actual_demand)
@@ -134,7 +132,7 @@ def next_res_cost(Reservoirs, Water_Demand):
 
     for location, demand in Water_Demand.items():
         nearest_reservoir = get_nearest_reservoir(location, Reservoirs)
-        distance = getReservoirDistance(location, nearest_reservoir)
+        distance = getReservoirDistance(location, nearest_reservoir, Reservoirs)
         actual_demand = 2100 + (546*demand)
         pressure_loss = get_pressure_loss(distance, actual_demand)
         transport_power = get_transport_power(pressure_loss, actual_demand)
@@ -190,6 +188,16 @@ print(f"Total transportation cost for reservoir at (25,25): {test_cost}")
 
 plt.ion()
 
-visualize_city(city_map, random.randint(1, 49), random.randint(1, 49))
-
 plt.show(block=True)
+
+if __name__ == "__main__":
+
+    randx = random.randint(1, 49)
+    randy = random.randint(1, 49)
+    visualize_city(city_map, randx, randy)
+    Reservoirs["Reservoir 1"] = (randx, randy)
+
+    for reservoir in Reservoirs:
+        print("Reservoir at:", reservoir)
+
+    print(single_res_cost(Reservoirs["Reservoir 1"], Water_Demand, Reservoirs))
