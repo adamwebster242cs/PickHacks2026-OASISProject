@@ -11,10 +11,47 @@ Reservoirs = {}
 #Reservoirs[(res_x, res_y)] = 0
 
 def buildGrid(width, height):
-    Water_Demand = {} #Create a dictionary to stroe value
+    """Creates a 2D array of zeros representing the city plots."""
+    grid = []
+    for i in range(height):
+        row = []
+        for j in range(width):
+            row.append(0)
+        grid.append(row)
+    return grid
+    
+def getDistance(xA, yA, xB, yB):
+    return abs(xA - xB) + abs(yA - yB)
 
-    for x in range(width):
-        for y in range(height):
+def populate_urban_bloom(grid, centers, max_demand, decay_rate):
+    height = len(grid)
+    width = len(grid[0])
+
+    for y in range(height):
+        for x in range(width):
+            for cx, cy in centers:
+                distance = getDistance(x, y, cx, cy)
+                
+                # Calculate how much demand reaches this specific block
+                bloom_val = max_demand - (distance * decay_rate)
+                bloom_val = max(0, bloom_val) # No negative demand
+                
+                # If this center's bloom is stronger than a previous one, use it
+                if bloom_val > grid[y][x]:
+                    grid[y][x] = bloom_val
+            
+            # Add minor noise to make the city look less like a perfect circle
+            if grid[y][x] > 0:
+                scaled_noise = (int(decay_rate * 0.1))
+                grid[y][x] += random.randint(0, 1)
+
+            if grid[y][x] == 0:
+                Possible_Demand = {
+                    "No Demand": 7.5,
+                    "Low Demand": 40,
+                    "Medium Demand": 15,
+                    "High Demand": 1.25
+                }
 
             #fill grid with random integers
             Water_Demand[(x, y)] = random.randint(1, 10) #I just used 10 as the highest demand - Jacob
@@ -41,16 +78,18 @@ def get_nearest_reservoir(location, Reservoirs):
         
     return nearest_reservoir
 
-# If we use a function like this, we can cause whats called Urban Bloom, where we mark high cost areas initially, and the areas around it gradually decrease in cost. Causing an effect like a real cities' demand for something like this.
-def urbanBloom():
-    return
 
-def calculateTotalSystemCost():
-    return
 
-# I think we should use matplotlib to visualize our final "perfect" reservoir spot on a map using a heat map to show the demand across the city. We can use a color gradient to indicate areas of high demand (red) to low demand (blue), with the reservoir location marked clearly.  - Jacob Agrees
-def visualizeCity():
-    return
+# 1. Setup the city
+city_map = buildGrid(50, 50)
+city_centers = {
+    "HotspotA": (1,1),
+    "HotspotB": (1,1),
+    "HotspotC": (1,1),
+    "HotspotD": (1,1),
+    "HotspotE": (1,1),
+    "HotspotF": (1,1)
+}
 
 def get_pressure_loss(distance_from_reservoir, actual_tile_water_demand):
     pipe_length = distance_from_reservoir * 3280.84 #convert kilometers to feet, since the formula uses feet
@@ -64,9 +103,18 @@ def get_transport_power(pressure_loss, actual_tile_water_demand):
 
 def get_transport_cost(transport_power, power_cost): #Cost = L * Q^2 => distance * demand^2 ; I'm assuming our flow rate is constant, and i added a weight on the demand
     return (transport_power * 24) * power_cost #Returns the daily cost of transporting water in dollars, from kilowatt hours
+for hotspot in city_centers:
+    city_centers[hotspot] = (random.randint(5, 45), random.randint(5, 45))
+downtowns = [(random.randint(1, 50), random.randint(1, 50)), (random.randint(1, 50), random.randint(1, 50)), (random.randint(1, 50), random.randint(1, 50))]
 
-def single_res_cost(reservoir, Water_Demand): #Takes in reservoir location and water demands dictionary to comput cost of original reservoir
-    total = 0
+# 2. Paint the demand
+populate_urban_bloom(city_map, downtowns, 10, 0.5)
+
+# 3. Test a potential reservoir location
+test_cost = calculateTotalSystemCost(city_map, 25, 25)
+print(f"Total transportation cost for reservoir at (25,25): {test_cost}")
+
+plt.ion() 
 
     for location, demand in Water_Demand.items():
         distance = getDistance(location, reservoir)
@@ -75,6 +123,8 @@ def single_res_cost(reservoir, Water_Demand): #Takes in reservoir location and w
         transport_power = get_transport_power(pressure_loss, actual_demand)
         transport_cost = get_transport_cost(transport_power, 0.12) #Assuming power cost of 12 cents per kWh
         total += transport_cost
+# Call your function with a starting position
+visualize_city(city_map, 25, 25)
 
     return total
 
