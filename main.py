@@ -29,6 +29,16 @@ def calculateTotalSystemCost():
 def visualizeCity():
     return
 
+def get_pressure_loss(distance_from_reservoir, Water_Demand):
+    pipe_length = distance_from_reservoir
+    flow_rate = Water_Demand
+    pipe_coefficient = 120 #assume Aluminum pipes with couplers, can be changed if needed
+    pipe_inside_diameter = 1.5 #assume 1.5 inch diameter
+    return (4.53 * pipe_length * ((flow_rate/pipe_coefficient) ** 1.852)/(pipe_inside_diameter ** 4.857))
+
+def get_transport_power(pressure_loss, Water_Demand):
+    return (pressure_loss * Water_Demand) / (3600000)
+
 def transport_cost(transport_power, power_cost): #Cost = L * Q^2 => distance * demand^2 ; I'm assuming our flow rate is constant, and i added a weight on the demand
     return (transport_power * 24) * power_cost #Returns the daily cost of transporting water in dollars, from kilowatt hours
 
