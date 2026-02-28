@@ -112,7 +112,7 @@ def get_pressure_loss(distance_from_reservoir, actual_tile_water_demand):
     pipe_length = distance_from_reservoir * 3280.84 #convert kilometers to feet, since the formula uses feet
     flow_rate = actual_tile_water_demand
     pipe_coefficient = 120 #assume Aluminum pipes with couplers, can be changed if needed
-    pipe_inside_diameter = 1.5 #assume 1.5 inch diameter
+    pipe_inside_diameter = 18 #assume 1.5 inch diameter
     return (4.53 * pipe_length * ((flow_rate/pipe_coefficient) ** 1.852)/(pipe_inside_diameter ** 4.857))
 
 def get_transport_power(pressure_loss, actual_tile_water_demand):
@@ -139,10 +139,14 @@ def single_res_cost(reservoir_name, Water_Demand, Reservoirs):
 def next_res_cost(Reservoirs, Water_Demand):
     total = 0
 
+    # You MUST use 'location, demand' here to separate the key from the value
     for location, demand in Water_Demand.items():
         nearest_reservoir = get_nearest_reservoir(location, Reservoirs)
         distance = getReservoirDistance(location, nearest_reservoir, Reservoirs)
-        actual_demand = 2100 + (546*demand)
+        
+        # Now 'demand' is just a number, and this math will work:
+        actual_demand = 2100 + (546 * demand)
+        
         pressure_loss = get_pressure_loss(distance, actual_demand)
         transport_power = get_transport_power(pressure_loss, actual_demand)
         transport_cost = get_transport_cost(transport_power, 0.12)
@@ -152,21 +156,62 @@ def next_res_cost(Reservoirs, Water_Demand):
 
 def get_best_resevoir_location(city_map, Reservoirs, Water_Demand):
     best_location = (0, 0)
+
+def find_best_second_reservoir(Water_Demand, current_reservoirs):
+    best_coord = (0, 0)
+    min_total_cost = float('inf')
     
-def visualize_city(grid, resX, resY):
-    plt.clf() # Clear the previous frame
+    # Iterate through every tile in the 50x50 grid
+    for y in range(50):
+        for x in range(50):
+            # Skip if there is already a reservoir at this exact spot
+            if (x, y) in current_reservoirs.values():
+                continue
+            
+            # 1. Temporarily add the second reservoir
+            current_reservoirs["Reservoir 2"] = (x, y)
+            
+            # 2. Calculate the system cost with TWO reservoirs
+            # Buildings automatically use the nearest one in this function
+            current_cost = next_res_cost(current_reservoirs, Water_Demand)
+            
+            # 3. If this is the cheapest we've seen, save it
+            if current_cost < min_total_cost:
+                min_total_cost = current_cost
+                best_coord = (x, y)
     
-    # Display the demand density
+    return best_coord, min_total_cost
+    
+def visualize_city(grid, Reservoirs):
+    plt.clf() 
+    
+    # 1. Draw the demand heatmap
     plt.imshow(grid, cmap='magma', origin='upper')
     plt.colorbar(label='Water Demand')
     
-    # Plot the reservoir as a bright blue star
-    plt.plot(resX, resY, 'c*', markersize=15, label='Reservoir')
+    # 2. DRAW THE BOUNDARY BLOCK
+    # This checks every tile to see if its neighbor belongs to a different reservoir
+    for y in range(50):
+        for x in range(50):
+            nearest = get_nearest_reservoir((x, y), Reservoirs)
+            # Check right neighbor
+            if x < 49:
+                if get_nearest_reservoir((x+1, y), Reservoirs) != nearest:
+                    plt.plot([x + 0.5, x + 0.5], [y - 0.5, y + 0.5], color='white', lw=1, alpha=0.6)
+            # Check bottom neighbor
+            if y < 49:
+                if get_nearest_reservoir((x, y+1), Reservoirs) != nearest:
+                    plt.plot([x - 0.5, x + 0.5], [y + 0.5, y + 0.5], color='white', lw=1, alpha=0.6)
     
-    plt.title(f"Reservoir Optimization - Current Pos: ({resX}, {resY})")
+    # 3. Plot the reservoirs
+    colors = ['cyan', 'blue', 'lime'] # Different colors for different reservoirs
+    for i, (name, pos) in enumerate(Reservoirs.items()):
+        plt.plot(pos[0], pos[1], marker='*', color=colors[i % 3], markersize=15, label=name)
+    
+    plt.title("City Water Demand & Reservoir Service Zones")
     plt.legend()
     plt.draw()
-    plt.pause(0.05) # Brief pause to create animation effect
+    plt.pause(0.1)
 
 # Call your function with a starting position
 #visualize_city(city_map, 25, 25)
@@ -196,16 +241,41 @@ test_cost = calculateTotalSystemCost(city_map, 25, 25)
 print(f"Total transportation cost for reservoir at (25,25): {test_cost}")
 
 if __name__ == "__main__":
+    # 1. Place the first reservoir randomly
+    res1_x, res1_y = random.randint(1, 49), random.randint(1, 49)
+    Reservoirs["Reservoir 1"] = (res1_x, res1_y)
+    
+    # 2. Find the best spot for the second reservoir
+    print("Finding the most efficient spot for Reservoir 2... (This may take a moment)")
+    best_pos, best_cost = find_best_second_reservoir(Water_Demand, Reservoirs)
+    
+    # 3. Finalize Reservoir 2 position
+    Reservoirs["Reservoir 2"] = best_pos
+    
+    print(f"Optimal Location for Reservoir 2: {best_pos}")
+    print(f"New Minimum System Cost: ${best_cost:,.2f}")
 
-    randx = random.randint(1, 49)
-    randy = random.randint(1, 49)
-    visualize_city(city_map, randx, randy)
-    Reservoirs["Reservoir 1"] = (randx, randy)
-
-    for reservoir in Reservoirs:
-        print("Reservoir at:", reservoir)
-
-    print(single_res_cost("Reservoir 1", Water_Demand, Reservoirs))
-
+    # 4. Visualization
     plt.ion()
-    plt.show(block=True)
+    visualize_city(city_map, Reservoirs) # Show city and both reservoirs
+    plt.plot(best_pos[0], best_pos[1], 'b*', markersize=15, label='Optimal Reservoir 2')
+    plt.legend()
+    # ONLY run this after you are 100% sure Reservoirs["Reservoir 1"] is set
+if "Reservoir 1" in Reservoirs:
+    # 1. Get the baseline (Legacy)
+    # We temporarily hide Reservoir 2 to see what the cost WAS
+    res2_temp = Reservoirs.pop("Reservoir 2", None) 
+    initial_cost = single_res_cost("Reservoir 1", Water_Demand, Reservoirs)
+    
+    # 2. Put Reservoir 2 back to see what the cost IS NOW
+    if res2_temp:
+        Reservoirs["Reservoir 2"] = res2_temp
+    
+    optimized_cost = next_res_cost(Reservoirs, Water_Demand)
+    
+    # 3. Final display logic
+    savings = initial_cost - optimized_cost
+    if initial_cost > 0:
+        percent_improvement = (savings / initial_cost) * 100
+        print(f"Success! Savings: {percent_improvement:.1f}%")
+        plt.show(block=True)
