@@ -28,3 +28,15 @@ def calculateTotalSystemCost():
 # I think we should use matplotlib to visualize our final "perfect" reservoir spot on a map using a heat map to show the demand across the city. We can use a color gradient to indicate areas of high demand (red) to low demand (blue), with the reservoir location marked clearly.  - Jacob Agrees
 def visualizeCity():
     return
+
+def transport_cost(distance, demand): #Cost = L * Q^2 => distance * demand^2 ; I'm assuming our flow rate is constant, and i added a weight on the demand
+    return distance * (demand ** 2)
+
+def single_res_cost(reservoir, Water_Demand): #Takes in reservoir location and water demands dictionary to comput cost of original reservoir
+    total = 0
+
+    for location, demand in Water_Demand.items():
+        distance = getDistance(location, reservoir)
+        total += transport_cost(distance, demand)
+
+    return total
