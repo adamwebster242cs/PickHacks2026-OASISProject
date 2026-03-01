@@ -110,7 +110,7 @@ def get_nearest_reservoir(location, Reservoirs):
 
 def get_pressure_loss(distance_from_reservoir, actual_tile_water_demand):
     pipe_length = distance_from_reservoir * 3280.84 #convert kilometers to feet, since the formula uses feet
-    flow_rate = actual_tile_water_demand / 60
+    flow_rate = actual_tile_water_demand
     pipe_coefficient = 120 #assume Aluminum pipes with couplers, can be changed if needed
     pipe_inside_diameter = 18 #assume 1.5 inch diameter
     return (4.53 * pipe_length * ((flow_rate/pipe_coefficient) ** 1.852)/(pipe_inside_diameter ** 4.857))
@@ -185,11 +185,11 @@ def find_best_second_reservoir(Water_Demand, current_reservoirs):
 def visualize_city(grid, Reservoirs):
     plt.clf() 
     
-    # 1. Draw the demand heatmap
+    # Drawing the demand heatmap
     plt.imshow(grid, cmap='magma', origin='upper')
     plt.colorbar(label='Water Demand')
     
-    # 2. DRAW THE BOUNDARY BLOCK
+    # 2. Drawing the boundary lines
     # This checks every tile to see if its neighbor belongs to a different reservoir
     for y in range(50):
         for x in range(50):
@@ -215,6 +215,12 @@ def visualize_city(grid, Reservoirs):
     plt.legend(loc='upper right')
     plt.draw()
     plt.pause(0.1)
+
+
+
+# NOTICE: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# AI WAS USED AS AN ASSISTANT FOR THE FOLLOWING SECTION!
+# NOTICE: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 # =============================================================================
@@ -299,6 +305,7 @@ def api_optimize_stream():
     water_demand_str = data["water_demand"]       # { "x,y": demand }
     r1x, r1y     = data["res1_pos"]
     size         = int(data.get("size", 50))
+    stream_every = int(data.get("stream_every", 5))  # how often to send updates
 
     # Convert string keys back to tuple keys for your functions
     water_demand_tuples = {
@@ -335,8 +342,8 @@ def api_optimize_stream():
                 best_coord     = (x, y)
                 improved       = True
 
-            # Stream every 5th step and all improvements to keep updates smooth
-            if improved or i % 5 == 0:
+            # Stream at the requested frequency + all improvements
+            if improved or i % stream_every == 0:
                 payload = {
                     "x":         x,
                     "y":         y,
