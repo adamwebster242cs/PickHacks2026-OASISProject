@@ -1,922 +1,1389 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OASIS — Optimal Aqueduct Siting Intelligence System</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OASIS — Reservoir Siting Tool</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
 
-  :root {
-    --bg: #060a08;
-    --panel: #0b110e;
-    --border: #1a3326;
-    --green: #00ffaa;
-    --green-dim: #00cc66;
-    --green-faint: #0f2d1e;
-    --amber: #ffaa00;
-    --red: #ff3344;
-    --cyan: #00e5ff;
-    --blue: #4488ff;
-    --text: #8fcfaa;
-    --text-dim: #3a6650;
-  }
+        :root {
+            --bg: #f4f6f8;
+            --surface: #ffffff;
+            --surface2: #f0f3f6;
+            --border: #dde2e8;
+            --border-dark: #c4cdd6;
+            --blue: #1a5fa8;
+            --blue-light: #e8f0fb;
+            --blue-mid: #4a8fd4;
+            --teal: #0f7b72;
+            --teal-light: #e4f4f2;
+            --amber: #c47a1a;
+            --amber-light: #fef3e2;
+            --red: #c0392b;
+            --red-light: #fdecea;
+            --text: #1c2b3a;
+            --text-mid: #4a5a6a;
+            --text-dim: #8a9aaa;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+        }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Share Tech Mono', monospace;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 13px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
-    pointer-events: none; z-index: 100;
-  }
-  body::after {
-    content: '';
-    position: fixed; inset: 0;
-    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.65) 100%);
-    pointer-events: none; z-index: 99;
-  }
+        /* ── HEADER ── */
+        header {
+            background: var(--blue);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            height: 52px;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-md);
+        }
 
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--panel);
-    flex-shrink: 0;
-  }
-  .logo {
-    font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.25rem;
-    letter-spacing: 0.2em; color: var(--green);
-    text-shadow: 0 0 20px var(--green), 0 0 40px rgba(0,255,170,0.3);
-  }
-  .logo span {
-    color: var(--text-dim); font-size: 0.5rem; display: block;
-    letter-spacing: 0.15em; margin-top: 1px; font-weight: 400; text-shadow: none;
-  }
-  .status-bar { display: flex; gap: 20px; font-size: 0.65rem; color: var(--text-dim); }
-  .status-item { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
-  .status-val { color: var(--green); font-size: 0.8rem; }
-  .blink { animation: blink 1.2s step-end infinite; }
-  @keyframes blink { 50% { opacity: 0; } }
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-  main {
-    display: grid;
-    grid-template-columns: 250px 1fr 215px;
-    flex: 1;
-    overflow: hidden;
-    min-height: 0;
-  }
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
 
-  .panel {
-    border-right: 1px solid var(--border);
-    background: var(--panel);
-    display: flex; flex-direction: column;
-    overflow: hidden;
-    min-height: 0;
-  }
+        .logo-text {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.2rem;
+            letter-spacing: 0.04em;
+        }
 
-  .panel.scrollable {
-    overflow-y: scroll; /* scroll not auto — forces bar always visible */
-    scrollbar-width: thin;
-    scrollbar-color: var(--green-dim) var(--green-faint);
-    padding-bottom: 12px; /* breathing room so last button isn't clipped */
-  }
-  .panel.scrollable::-webkit-scrollbar { width: 6px; } /* slightly wider so it's visible on Mac */
-  .panel.scrollable::-webkit-scrollbar-track { background: var(--green-faint); }
-  .panel.scrollable::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 3px; }
-  .panel.scrollable::-webkit-scrollbar-thumb:hover { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .logo-sub {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.65);
+            margin-top: 1px;
+            font-weight: 300;
+        }
 
-  .panel-title {
-    font-family: 'Orbitron', sans-serif; font-size: 0.55rem;
-    letter-spacing: 0.2em; color: var(--text-dim);
-    padding: 8px 14px 6px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    text-transform: uppercase;
-  }
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
 
-  .canvas-wrap {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: #040806;
-    padding: 12px;
-    gap: 8px;
-    overflow: hidden;
-    min-height: 0;
-    position: relative;
-  }
+        .status-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.12);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
 
-  /* Loading overlay */
-  #loadingOverlay {
-    display: none;
-    position: absolute; inset: 0;
-    background: rgba(4, 8, 6, 0.85);
-    align-items: center; justify-content: center;
-    flex-direction: column; gap: 12px;
-    z-index: 10;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.75rem; letter-spacing: 0.15em;
-    color: var(--green);
-    text-shadow: 0 0 10px var(--green);
-  }
-  #loadingOverlay.visible { display: flex; }
-  .spinner {
-    width: 28px; height: 28px;
-    border: 2px solid var(--green-faint);
-    border-top-color: var(--green);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 0 2px rgba(74,222,128,0.3);
+        }
 
-  #canvasContainer {
-    flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-  }
-  #gridCanvas {
-    image-rendering: pixelated;
-    border: 1px solid var(--border);
-    box-shadow: 0 0 40px rgba(0,255,170,0.05);
-    cursor: crosshair;
-    display: block;
-  }
+            .status-dot.offline {
+                background: #f87171;
+                box-shadow: 0 0 0 2px rgba(248,113,113,0.3);
+            }
 
-  .canvas-footer {
-    flex-shrink: 0;
-    display: flex; justify-content: space-between; align-items: center;
-    width: 100%; font-size: 0.6rem; color: var(--text-dim); padding: 0 4px;
-  }
-  .legend { display: flex; align-items: center; gap: 8px; font-size: 0.6rem; color: var(--text-dim); }
-  .legend-bar {
-    width: 110px; height: 7px; border-radius: 1px;
-    background: linear-gradient(to right, #0a0a0a, #1a0a2e, #6600cc, #cc3300, #ff6600, #ffcc00, #fff);
-  }
-  .voronoi-legend { display: flex; align-items: center; gap: 8px; font-size: 0.6rem; }
-  .vl-item { display: flex; align-items: center; gap: 4px; }
-  .vl-dot { width: 8px; height: 8px; border-radius: 50%; }
+            .status-dot.idle {
+                background: #fbbf24;
+                box-shadow: 0 0 0 2px rgba(251,191,36,0.3);
+            }
 
-  .ctrl-section {
-    padding: 10px 14px; border-bottom: 1px solid var(--border);
-    display: flex; flex-direction: column; gap: 8px;
-    flex-shrink: 0;
-  }
-  .ctrl-label { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
-  .ctrl-row { display: flex; gap: 8px; align-items: center; }
+        #clock {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.7);
+            font-weight: 300;
+        }
 
-  input[type=range] {
-    -webkit-appearance: none; width: 100%; height: 2px;
-    background: var(--border); outline: none; flex: 1;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%;
-    background: var(--green); cursor: pointer; box-shadow: 0 0 6px var(--green);
-  }
-  .val-display { font-size: 0.75rem; color: var(--green); min-width: 38px; text-align: right; }
+        /* ── MAIN LAYOUT ── */
+        main {
+            display: grid;
+            grid-template-columns: 260px 1fr 230px;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+            gap: 0;
+        }
 
-  button {
-    font-family: 'Share Tech Mono', monospace; font-size: 0.68rem;
-    letter-spacing: 0.08em; border: 1px solid var(--green-dim);
-    background: transparent; color: var(--green);
-    padding: 6px 10px; cursor: pointer; text-transform: uppercase;
-    transition: all 0.15s; width: 100%;
-  }
-  button:hover { background: rgba(0,255,170,0.08); box-shadow: 0 0 10px rgba(0,255,170,0.2); border-color: var(--green); }
-  button:disabled { opacity: 0.35; cursor: not-allowed; }
-  button.primary { border-color: var(--cyan); color: var(--cyan); }
-  button.primary:hover { background: rgba(0,229,255,0.08); }
-  button.danger { border-color: var(--red); color: var(--red); }
-  button.danger:hover { background: rgba(255,51,68,0.1); }
+        /* ── PANELS ── */
+        .sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: scroll;
+            min-height: 0;
+            padding-bottom: 16px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-dark) var(--surface2);
+        }
 
-  .mode-tabs { display: flex; gap: 0; }
-  .mode-tab {
-    flex: 1; font-family: 'Share Tech Mono', monospace; font-size: 0.62rem;
-    letter-spacing: 0.06em; border: 1px solid var(--border);
-    background: transparent; color: var(--text-dim); padding: 5px 4px;
-    cursor: pointer; transition: all 0.15s; text-transform: uppercase;
-  }
-  .mode-tab.active { background: var(--green-faint); color: var(--green); border-color: var(--green-dim); }
+            .sidebar::-webkit-scrollbar {
+                width: 6px;
+            }
 
-  .hotspot-list { padding: 8px 14px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
-  .hotspot-item {
-    display: flex; justify-content: space-between; font-size: 0.63rem;
-    padding: 4px 7px; border: 1px solid var(--border); background: var(--green-faint);
-    flex-shrink: 0;
-  }
-  .hotspot-name { color: var(--text-dim); }
-  .hotspot-coord { color: var(--cyan); }
+            .sidebar::-webkit-scrollbar-track {
+                background: var(--surface2);
+            }
 
-  .stat-block { padding: 8px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  .stat-name { font-size: 0.55rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
-  .stat-value { font-size: 0.9rem; color: var(--green); margin-top: 1px; }
-  .stat-value.amber { color: var(--amber); }
-  .stat-value.cyan  { color: var(--cyan); }
-  .stat-value.blue  { color: var(--blue); }
-  .stat-value.sm    { font-size: 0.75rem; }
+            .sidebar::-webkit-scrollbar-thumb {
+                background: var(--border-dark);
+                border-radius: 3px;
+            }
 
-  .log-area {
-    flex: 1; overflow-y: auto; padding: 8px 14px;
-    display: flex; flex-direction: column; gap: 3px;
-    min-height: 0;
-    scrollbar-width: thin;
-    scrollbar-color: var(--green-dim) var(--green-faint);
-  }
-  .log-area::-webkit-scrollbar { width: 4px; }
-  .log-area::-webkit-scrollbar-track { background: var(--green-faint); border-radius: 2px; }
-  .log-area::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 2px; }
-  .log-area::-webkit-scrollbar-thumb:hover { background: var(--green); box-shadow: 0 0 6px var(--green); }
+                .sidebar::-webkit-scrollbar-thumb:hover {
+                    background: var(--text-dim);
+                }
 
-  .log-entry {
-    font-size: 0.6rem; color: var(--text-dim);
-    border-left: 2px solid var(--border); padding-left: 7px;
-    animation: fadeIn 0.3s ease; flex-shrink: 0;
-  }
-  .log-entry.hi   { color: var(--green); border-color: var(--green); }
-  .log-entry.warn { color: var(--amber); border-color: var(--amber); }
-  .log-entry.info { color: var(--cyan);  border-color: var(--cyan);  }
-  @keyframes fadeIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; } }
+        .right-panel {
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
 
-  .progress-wrap { padding: 0 14px 10px; flex-shrink: 0; }
-  .progress-bar-bg { height: 3px; background: var(--border); border-radius: 2px; }
-  .progress-bar-fill { height: 3px; background: var(--green); border-radius: 2px; width: 0%; transition: width 0.15s; box-shadow: 0 0 6px var(--green); }
-  .progress-label { font-size: 0.58rem; color: var(--text-dim); margin-top: 3px; text-align: right; }
+        /* ── SECTION HEADERS ── */
+        .section-header {
+            padding: 12px 16px 8px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border);
+            background: var(--surface2);
+            flex-shrink: 0;
+        }
 
-  footer {
-    padding: 5px 20px; border-top: 1px solid var(--border); background: var(--panel);
-    display: flex; justify-content: space-between; font-size: 0.58rem; color: var(--text-dim);
-    flex-shrink: 0;
-  }
-</style>
+        /* ── FORM CONTROLS ── */
+        .ctrl-group {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ctrl-label {
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--text-mid);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .ctrl-label span {
+                color: var(--blue);
+                font-weight: 600;
+            }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            outline: none;
+        }
+
+            input[type=range]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: var(--blue);
+                cursor: pointer;
+                box-shadow: 0 1px 3px rgba(26,95,168,0.4);
+                border: 2px solid white;
+            }
+
+        /* ── MODE TABS ── */
+        .mode-tabs {
+            display: flex;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .mode-tab {
+            flex: 1;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 500;
+            border: none;
+            background: var(--surface2);
+            color: var(--text-mid);
+            padding: 7px 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+            .mode-tab.active {
+                background: var(--blue);
+                color: white;
+            }
+
+            .mode-tab:not(.active):hover {
+                background: var(--blue-light);
+                color: var(--blue);
+            }
+
+        /* ── BUTTONS ── */
+        .btn {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+        }
+
+            .btn:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+
+        .btn-primary {
+            background: var(--blue);
+            color: white;
+            border-color: var(--blue);
+        }
+
+            .btn-primary:hover:not(:disabled) {
+                background: #1450a0;
+            }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text-mid);
+        }
+
+            .btn-secondary:hover:not(:disabled) {
+                background: var(--blue-light);
+                color: var(--blue);
+                border-color: var(--blue-mid);
+            }
+
+        .btn-success {
+            background: var(--teal);
+            color: white;
+            border-color: var(--teal);
+        }
+
+            .btn-success:hover:not(:disabled) {
+                background: #0a6860;
+            }
+
+        .btn-danger {
+            background: var(--surface);
+            color: var(--red);
+            border-color: #e8c4c0;
+        }
+
+            .btn-danger:hover:not(:disabled) {
+                background: var(--red-light);
+            }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ── DEMAND CENTERS LIST ── */
+        .center-list {
+            padding: 8px 16px;
+            overflow-y: auto;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .center-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 8px;
+            border-radius: 4px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            font-size: 0.7rem;
+        }
+
+        .center-name {
+            color: var(--text-mid);
+            font-weight: 500;
+        }
+
+        .center-coord {
+            color: var(--blue);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ── CENTER: MAP AREA ── */
+        .map-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #e8edf2;
+            padding: 16px;
+            gap: 10px;
+            overflow: hidden;
+            min-height: 0;
+            position: relative;
+        }
+
+        /* axis label wrapper */
+        .map-with-axes {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .axis-x {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0 0 0;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .axis-y {
+            position: absolute;
+            left: -28px;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+            width: 26px;
+        }
+
+        #loadingOverlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(244,246,248,0.88);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 10;
+        }
+
+            #loadingOverlay.visible {
+                display: flex;
+            }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            animation: spin 0.75s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #loadingText {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-mid);
+        }
+
+        #canvasContainer {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #gridCanvas {
+            image-rendering: pixelated;
+            border-radius: 4px;
+            box-shadow: var(--shadow-md);
+            cursor: crosshair;
+            display: block;
+            border: 1px solid var(--border-dark);
+        }
+
+        .map-footer {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            font-size: 0.68rem;
+            color: var(--text-mid);
+            background: var(--surface);
+            border-radius: 6px;
+            padding: 6px 10px;
+            box-shadow: var(--shadow);
+        }
+
+        .legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.68rem;
+            color: var(--text-mid);
+        }
+
+        .legend-bar {
+            width: 100px;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #ffffff, #e0ecf8, #9ecae1, #4292c6, #08519c, #08306b);
+        }
+
+        .voronoi-legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.68rem;
+        }
+
+        .vl-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .vl-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* ── RIGHT: STATS ── */
+        .stat-card {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-dim);
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+
+            .stat-value.blue {
+                color: var(--blue);
+            }
+
+            .stat-value.teal {
+                color: var(--teal);
+            }
+
+            .stat-value.amber {
+                color: var(--amber);
+            }
+
+            .stat-value.sm {
+                font-size: 0.8rem;
+            }
+
+        .stat-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: 20px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .badge-amber {
+            background: var(--amber-light);
+            color: var(--amber);
+        }
+
+        .badge-teal {
+            background: var(--teal-light);
+            color: var(--teal);
+        }
+
+        /* ── PROGRESS BAR ── */
+        .progress-wrap {
+            padding: 10px 16px;
+            flex-shrink: 0;
+        }
+
+        .progress-track {
+            height: 6px;
+            background: var(--surface2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--blue);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.15s;
+        }
+
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4px;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+        }
+
+        /* ── LOG ── */
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 16px 8px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border);
+            background: var(--surface2);
+            flex-shrink: 0;
+        }
+
+        .log-clear-btn {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-dim);
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+            .log-clear-btn:hover {
+                background: var(--red-light);
+                color: var(--red);
+                border-color: #e8c4c0;
+            }
+
+        .log-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-height: 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-dark) var(--surface2);
+        }
+
+            .log-area::-webkit-scrollbar {
+                width: 5px;
+            }
+
+            .log-area::-webkit-scrollbar-track {
+                background: var(--surface2);
+            }
+
+            .log-area::-webkit-scrollbar-thumb {
+                background: var(--border-dark);
+                border-radius: 3px;
+            }
+
+        .log-entry {
+            font-size: 0.68rem;
+            color: var(--text-dim);
+            padding: 3px 6px;
+            border-radius: 3px;
+            border-left: 3px solid transparent;
+            animation: slideIn 0.2s ease;
+            flex-shrink: 0;
+            line-height: 1.4;
+        }
+
+            .log-entry.hi {
+                color: var(--teal);
+                border-color: var(--teal);
+                background: var(--teal-light);
+            }
+
+            .log-entry.warn {
+                color: var(--amber);
+                border-color: var(--amber);
+                background: var(--amber-light);
+            }
+
+            .log-entry.info {
+                color: var(--blue);
+                border-color: var(--blue);
+                background: var(--blue-light);
+            }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 6px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            flex-shrink: 0;
+        }
+
+        #footerStatus {
+            font-weight: 500;
+            color: var(--text-mid);
+        }
+    </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">OASIS<span>OPTIMAL AQUEDUCT SITING INTELLIGENCE SYSTEM</span></div>
-  <div class="status-bar">
-    <div class="status-item"><div>MODE</div><div class="status-val" id="modeLabel">—</div></div>
-    <div class="status-item"><div>SCAN</div><div class="status-val" id="scanStatus">IDLE</div></div>
-    <div class="status-item"><div>BACKEND</div><div class="status-val" id="backendStatus"><span class="blink">▮</span> —</div></div>
-    <div class="status-item"><div>TIME</div><div class="status-val" id="clock">--:--:--</div></div>
-  </div>
-</header>
-
-<main>
-
-  <!-- LEFT -->
-  <div class="panel scrollable">
-    <div class="panel-title">// OPERATING MODE</div>
-    <div class="ctrl-section">
-      <div class="mode-tabs">
-        <button class="mode-tab active" id="tabMode1" onclick="setMode(1)">SINGLE RES</button>
-        <button class="mode-tab" id="tabMode2" onclick="setMode(2)">DUAL RES</button>
-      </div>
-    </div>
-
-    <div class="panel-title">// GRID PARAMETERS</div>
-    <div class="ctrl-section">
-      <div class="ctrl-label">Grid Size</div>
-      <div class="ctrl-row"><input type="range" id="gridSize" min="20" max="80" value="50"><div class="val-display" id="gridSizeVal">50</div></div>
-      <div class="ctrl-label">Hotspot Count</div>
-      <div class="ctrl-row"><input type="range" id="hotspotCount" min="2" max="10" value="6"><div class="val-display" id="hotspotCountVal">6</div></div>
-      <div class="ctrl-label">Decay Rate</div>
-      <div class="ctrl-row"><input type="range" id="decayRate" min="1" max="20" value="5"><div class="val-display" id="decayRateVal">0.5</div></div>
-      <div class="ctrl-label">Max Demand</div>
-      <div class="ctrl-row"><input type="range" id="maxDemand" min="5" max="30" value="10"><div class="val-display" id="maxDemandVal">10</div></div>
-    </div>
-
-    <div class="panel-title">// PIPE PARAMETERS</div>
-    <div class="ctrl-section">
-      <div class="ctrl-label">Pipe Diameter (inches)</div>
-      <div class="ctrl-row"><input type="range" id="pipeDiam" min="4" max="48" value="18"><div class="val-display" id="pipeDiamVal">18"</div></div>
-      <div class="ctrl-label">Hazen-Williams C</div>
-      <div class="ctrl-row"><input type="range" id="pipeC" min="60" max="150" value="120"><div class="val-display" id="pipeCVal">120</div></div>
-      <div class="ctrl-label">Energy Cost (¢/kWh)</div>
-      <div class="ctrl-row"><input type="range" id="powerCost" min="5" max="30" value="12"><div class="val-display" id="powerCostVal">12¢</div></div>
-      <div class="ctrl-label">Anim Speed</div>
-      <div class="ctrl-row"><input type="range" id="animSpeed" min="1" max="200" value="30"><div class="val-display" id="animSpeedVal">30ms</div></div>
-    </div>
-
-    <div class="ctrl-section">
-      <button id="btnGenerate" onclick="generate()">⬡ GENERATE CITY</button>
-      <button id="btnOptimize" class="primary" onclick="runOptimizer()">▶ RUN OPTIMIZER</button>
-      <button id="btnStop" onclick="stopOptimizer()">◼ STOP</button>
-      <button class="danger" onclick="fullReset()">⟳ FULL RESET</button>
-    </div>
-
-    <div class="panel-title">// DEMAND CENTERS</div>
-    <div class="hotspot-list" id="hotspotList"></div>
-  </div>
-
-  <!-- CENTER -->
-  <div class="canvas-wrap">
-    <div id="loadingOverlay">
-      <div class="spinner"></div>
-      <span id="loadingText">GENERATING CITY...</span>
-    </div>
-    <div id="canvasContainer">
-      <canvas id="gridCanvas"></canvas>
-    </div>
-    <div class="canvas-footer">
-      <span id="hoverInfo">HOVER GRID TO INSPECT • CLICK TO PLACE RESERVOIR</span>
-      <div style="display:flex;gap:14px;align-items:center;">
-        <div class="voronoi-legend" id="voronoiLegend" style="display:none">
-          <div class="vl-item"><div class="vl-dot" style="background:var(--cyan)"></div><span style="color:var(--cyan)">RES-1</span></div>
-          <div class="vl-item"><div class="vl-dot" style="background:var(--blue)"></div><span style="color:var(--blue)">RES-2</span></div>
-          <span style="color:var(--text-dim)">— VORONOI BOUNDARY</span>
+    <header>
+        <div class="logo-group">
+            <div class="logo-icon">💧</div>
+            <div>
+                <div class="logo-text">OASIS</div>
+                <div class="logo-sub">Optimal Aqueduct Siting Intelligence Systems</div>
+            </div>
         </div>
-        <div class="legend"><span>LOW</span><div class="legend-bar"></div><span>HIGH</span></div>
-      </div>
-    </div>
-  </div>
+        <div class="header-status">
+            <div class="status-chip">
+                <div class="status-dot idle" id="backendDot"></div>
+                <span id="backendLabel">Connecting...</span>
+            </div>
+            <div id="clock">--:--:--</div>
+        </div>
+    </header>
 
-  <!-- RIGHT -->
-  <div class="panel" style="border-right:none;border-left:1px solid var(--border)">
-    <div class="panel-title">// COST METRICS ($/DAY)</div>
-    <div class="stat-block">
-      <div class="stat-name">Legacy Cost (Res 1 Only)</div>
-      <div class="stat-value amber sm" id="statLegacy">—</div>
-    </div>
-    <div class="stat-block">
-      <div class="stat-name">Current Probe Cost</div>
-      <div class="stat-value amber sm" id="statCost">—</div>
-    </div>
-    <div class="stat-block">
-      <div class="stat-name">Best Cost Found</div>
-      <div class="stat-value sm" id="statBest">—</div>
-    </div>
-    <div class="stat-block">
-      <div class="stat-name">Daily Savings</div>
-      <div class="stat-value sm" id="statSavings">—</div>
-    </div>
-    <div class="stat-block">
-      <div class="stat-name">Efficiency Gain</div>
-      <div class="stat-value sm" id="statImprove">—</div>
-    </div>
+    <main>
 
-    <div class="panel-title">// RESERVOIR POSITIONS</div>
-    <div class="stat-block">
-      <div class="stat-name">Reservoir 1 (Legacy)</div>
-      <div class="stat-value cyan sm" id="statRes1">—</div>
-    </div>
-    <div class="stat-block">
-      <div class="stat-name">Res 2 — Current Probe</div>
-      <div class="stat-value blue sm" id="statRes2Probe">—</div>
-    </div>
-    <div class="stat-block">
-      <div class="stat-name">Res 2 — Best Found</div>
-      <div class="stat-value blue sm" id="statRes2Best">—</div>
-    </div>
-    <div class="stat-block">
-      <div class="stat-name">Cells Evaluated</div>
-      <div class="stat-value sm" id="statEval">0</div>
-    </div>
+        <!-- LEFT SIDEBAR -->
+        <div class="sidebar">
 
-    <div class="panel-title">// SCAN PROGRESS</div>
-    <div class="progress-wrap">
-      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
-      <div class="progress-label" id="progressLabel">0 / 0</div>
-    </div>
+            <div class="section-header">City Grid Parameters</div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Grid Size <span id="gridSizeVal">50</span></div>
+                <input type="range" id="gridSize" min="20" max="80" value="50">
 
-    <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">
-      <span>// OPERATION LOG</span>
-      <button onclick="clearLog()" style="width:auto;padding:2px 8px;font-size:0.5rem;border-color:var(--text-dim);color:var(--text-dim);">CLR</button>
-    </div>
-    <div class="log-area" id="logArea"></div>
-  </div>
-</main>
+                <div class="ctrl-label">Demand Centers <span id="hotspotCountVal">6</span></div>
+                <input type="range" id="hotspotCount" min="2" max="10" value="6">
 
-<footer>
-  <span>OASIS v0.3.0 — Flask Backend</span>
-  <span id="footerStatus">READY</span>
-  <span>PIPE: <span id="footerPipe">18" Ø · C=120 · $0.12/kWh</span></span>
-</footer>
+                <div class="ctrl-label">Demand Decay Rate <span id="decayRateVal">0.5</span></div>
+                <input type="range" id="decayRate" min="1" max="20" value="5">
 
-<script>
-// ═══════════════════════════════════════════════════════════
-// OASIS FRONTEND — all computation delegated to Flask backend
-// ═══════════════════════════════════════════════════════════
+                <div class="ctrl-label">Peak Demand <span id="maxDemandVal">10</span></div>
+                <input type="range" id="maxDemand" min="5" max="30" value="10">
+            </div>
 
-const API = "http://localhost:5000";
+            <div class="section-header">Simulation Settings</div>
+            <div class="ctrl-group">
+                <div class="ctrl-label">Animation Speed <span id="animSpeedVal">30ms</span></div>
+                <input type="range" id="animSpeed" min="1" max="200" value="30">
+                <div class="ctrl-label">Tile Size <span id="tileSizeVal">0.5 km</span></div>
+                <input type="range" id="tileSize" min="1" max="20" value="5">
+            </div>
 
-// State from backend
-let city        = null;   // 2D grid
-let waterDemand = {};     // { "x,y": demand }
-let reservoirs  = {};     // { "Reservoir 1": [x,y], ... }
-let legacyCost  = null;
-let mode        = 1;
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="btnGenerate" onclick="generate()">⬡ Generate City Map</button>
+                <button class="btn btn-success" id="btnOptimize" onclick="runOptimizer()">▶ Run Optimization</button>
+                <button class="btn btn-secondary" id="btnStop" onclick="stopOptimizer()">◼ Stop</button>
+                <button class="btn btn-danger" onclick="fullReset()">↺ Reset</button>
+            </div>
 
-// Optimizer state
-let sseSource   = null;   // EventSource for streaming
-let isRunning   = false;
-let bestPos     = null;
-let bestCost    = Infinity;
+            <div class="section-header">Demand Centers</div>
+            <div class="center-list" id="hotspotList"></div>
 
-// ── BACKEND HEALTH CHECK ────────────────────────────────────
-async function checkBackend() {
-  try {
-    const r = await fetch(`${API}/`, { method: "HEAD", signal: AbortSignal.timeout(2000) });
-    setBackendStatus(r.ok);
-  } catch {
-    setBackendStatus(false);
-  }
-}
-function setBackendStatus(ok) {
-  const el = document.getElementById('backendStatus');
-  el.innerHTML = ok ? '<span class="blink">▮</span> ONLINE' : '▮ OFFLINE';
-  el.style.color = ok ? 'var(--green)' : 'var(--red)';
-}
+        </div>
 
-// ── MAGMA COLORMAP (rendering only, stays in JS) ────────────
-function magmaColor(t) {
-  t = Math.max(0, Math.min(1, t));
-  const s = [[0,0,4],[28,16,68],[90,22,100],[175,42,80],[229,90,50],[252,166,54],[253,230,166],[252,253,191]];
-  const i = Math.min(Math.floor(t*(s.length-1)), s.length-2);
-  const f = t*(s.length-1)-i;
-  return [
-    Math.round(s[i][0]+(s[i+1][0]-s[i][0])*f),
-    Math.round(s[i][1]+(s[i+1][1]-s[i][1])*f),
-    Math.round(s[i][2]+(s[i+1][2]-s[i][2])*f),
-  ];
-}
+        <!-- CENTER MAP -->
+        <div class="map-wrap">
+            <div id="loadingOverlay">
+                <div class="spinner"></div>
+                <span id="loadingText">Generating city map...</span>
+            </div>
 
-// ── CANVAS ───────────────────────────────────────────────────
-const canvas = document.getElementById('gridCanvas');
-const ctx    = canvas.getContext('2d');
+            <!-- Canvas with axis labels -->
+            <div class="map-with-axes" id="mapWithAxes" style="margin-left:32px;">
+                <div class="axis-y" id="axisY"></div>
+                <canvas id="gridCanvas"></canvas>
+                <div class="axis-x" id="axisX"></div>
+            </div>
 
-function getCellSize() {
-  if (!city) return 10;
-  return Math.max(4, Math.floor(Math.min(560/city[0].length, 540/city.length)));
-}
+            <div class="map-footer">
+                <span id="hoverInfo">Hover over map to inspect · Click to place Reservoir 2</span>
+                <div style="display:flex;gap:14px;align-items:center;">
+                    <div class="voronoi-legend" id="voronoiLegend" style="display:none">
+                        <div class="vl-item"><div class="vl-dot" style="background:#f97316"></div><span>Reservoir 1 Zone</span></div>
+                        <div class="vl-item"><div class="vl-dot" style="background:#c2410c"></div><span>Reservoir 2 Zone</span></div>
+                    </div>
+                    <div class="legend">
+                        <span>Low demand</span>
+                        <div class="legend-bar"></div>
+                        <span>High demand</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-function drawGrid(probePos = null) {
-  if (!city) return;
-  const h = city.length, w = city[0].length;
-  const CELL = getCellSize();
-  canvas.width  = w * CELL;
-  canvas.height = h * CELL;
+        <!-- RIGHT PANEL -->
+        <div class="right-panel">
 
-  // Heatmap
-  let maxVal = 0;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (city[y][x] > maxVal) maxVal = city[y][x];
-  const img = ctx.createImageData(canvas.width, canvas.height);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const t = maxVal > 0 ? city[y][x] / maxVal : 0;
-      const [r,g,b] = magmaColor(t);
-      for (let dy = 0; dy < CELL; dy++) {
-        for (let dx = 0; dx < CELL; dx++) {
-          const idx = ((y*CELL+dy)*canvas.width+(x*CELL+dx))*4;
-          img.data[idx]=r; img.data[idx+1]=g; img.data[idx+2]=b; img.data[idx+3]=255;
+            <div class="section-header">Cost Analysis ($/day)</div>
+
+            <div class="stat-card">
+                <div class="stat-label">Baseline Cost — Reservoir 1 Only</div>
+                <div class="stat-value amber sm" id="statLegacy">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Current Candidate Cost</div>
+                <div class="stat-value amber sm" id="statCost">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Best System Cost Found</div>
+                <div class="stat-value teal sm" id="statBest">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Projected Daily Savings</div>
+                <div class="stat-value teal sm" id="statSavings">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Projected Annual Savings</div>
+                <div class="stat-value teal sm" id="statSavingsYear">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Efficiency Improvement</div>
+                <div class="stat-value teal sm" id="statImprove">—</div>
+            </div>
+
+            <div class="section-header">Reservoir Locations</div>
+
+            <div class="stat-card">
+                <div class="stat-label">Reservoir 1 — Existing Infrastructure</div>
+                <div class="stat-value blue sm" id="statRes1">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Reservoir 2 — Current Candidate</div>
+                <div class="stat-value sm" id="statRes2Probe">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Reservoir 2 — Optimal Location</div>
+                <div class="stat-value teal sm" id="statRes2Best">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Locations Evaluated</div>
+                <div class="stat-value sm" id="statEval">0</div>
+            </div>
+
+            <div class="section-header">Scan Progress</div>
+            <div class="progress-wrap">
+                <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+                <div class="progress-meta">
+                    <span id="progressLabel">0 / 0 locations</span>
+                    <span id="scanStatus">Idle</span>
+                </div>
+            </div>
+            <div class="log-header">
+                Activity Log
+                <button class="log-clear-btn" onclick="clearLog()">Clear</button>
+            </div>
+            <div class="log-area" id="logArea"></div>
+
+        </div>
+    </main>
+
+    <footer>
+        <span>OASIS v0.3.0 — Flask Backend · Missouri S&T Hackathon 2026</span>
+        <span id="footerStatus">Ready</span>
+    </footer>
+
+    <script>
+        const API = "http://localhost:5000";
+
+        let city = null;
+        let waterDemand = {};
+        let reservoirs = {};
+        let legacyCost = null;
+        const mode = 2;  // always dual reservoir
+        let sseSource = null;
+        let isRunning = false;
+        let bestPos = null;
+        let bestCost = Infinity;
+        let abortController = null;  // used to cancel the optimizer fetch stream
+
+        // ── BACKEND CHECK ────────────────────────────────────────────
+        async function checkBackend() {
+            try {
+                const r = await fetch(`${API}/`, { method: "HEAD", signal: AbortSignal.timeout(2000) });
+                setBackendStatus(r.ok);
+            } catch { setBackendStatus(false); }
         }
-      }
-    }
-  }
-  ctx.putImageData(img, 0, 0);
-
-  // Voronoi boundary
-  if (mode === 2 && Object.keys(reservoirs).length === 2) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-    ctx.lineWidth = 1;
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const nr = nearestReservoir(x, y);
-        if (x < w-1 && nearestReservoir(x+1,y) !== nr) {
-          ctx.beginPath(); ctx.moveTo((x+1)*CELL,y*CELL); ctx.lineTo((x+1)*CELL,(y+1)*CELL); ctx.stroke();
+        function setBackendStatus(ok) {
+            const dot = document.getElementById('backendDot');
+            const label = document.getElementById('backendLabel');
+            dot.className = 'status-dot' + (ok ? '' : ' offline');
+            label.textContent = ok ? 'Backend Connected' : 'Backend Offline';
         }
-        if (y < h-1 && nearestReservoir(x,y+1) !== nr) {
-          ctx.beginPath(); ctx.moveTo(x*CELL,(y+1)*CELL); ctx.lineTo((x+1)*CELL,(y+1)*CELL); ctx.stroke();
+
+        // ── WHITE → BLUE COLORMAP ────────────────────────────────────
+        function magmaColor(t) {
+            t = Math.max(0, Math.min(1, t));
+            const s = [[255, 255, 255], [224, 236, 248], [171, 210, 239], [107, 174, 214], [49, 130, 189], [8, 81, 156], [8, 48, 107]];
+            const i = Math.min(Math.floor(t * (s.length - 1)), s.length - 2);
+            const f = t * (s.length - 1) - i;
+            return [
+                Math.round(s[i][0] + (s[i + 1][0] - s[i][0]) * f),
+                Math.round(s[i][1] + (s[i + 1][1] - s[i][1]) * f),
+                Math.round(s[i][2] + (s[i + 1][2] - s[i][2]) * f),
+            ];
         }
-      }
-    }
-    ctx.restore();
-    document.getElementById('voronoiLegend').style.display = 'flex';
-  } else {
-    document.getElementById('voronoiLegend').style.display = 'none';
-  }
 
-  // Reservoir stars
-  const colors = { 'Reservoir 1': '#00e5ff', 'Reservoir 2': '#4488ff' };
-  for (const [name, pos] of Object.entries(reservoirs)) {
-    drawStar(pos[0]*CELL+CELL/2, pos[1]*CELL+CELL/2, 11, colors[name]||'#fff', name==='Reservoir 2');
-  }
-  // Probe dot
-  if (probePos) {
-    drawStar(probePos[0]*CELL+CELL/2, probePos[1]*CELL+CELL/2, 6, 'rgba(68,136,255,0.5)', false);
-  }
-}
+        // ── CANVAS ───────────────────────────────────────────────────
+        const canvas = document.getElementById('gridCanvas');
+        const ctx = canvas.getContext('2d');
 
-function drawStar(px, py, size, color, filled) {
-  const spikes = 6, inner = size*0.42;
-  ctx.save();
-  ctx.strokeStyle=color; ctx.fillStyle=color; ctx.shadowColor=color; ctx.shadowBlur=14; ctx.lineWidth=1.5;
-  ctx.beginPath();
-  for (let i = 0; i < spikes*2; i++) {
-    const r = i%2===0 ? size : inner;
-    const angle = (i*Math.PI/spikes)-Math.PI/2;
-    i===0 ? ctx.moveTo(px+Math.cos(angle)*r, py+Math.sin(angle)*r)
-           : ctx.lineTo(px+Math.cos(angle)*r, py+Math.sin(angle)*r);
-  }
-  ctx.closePath();
-  if (filled) ctx.fill();
-  ctx.stroke();
-  ctx.restore();
-}
-
-// ── NEAREST RESERVOIR (JS, for hover/voronoi rendering) ─────
-function nearestReservoir(x, y) {
-  let best = null, bestD = Infinity;
-  for (const [key, [rx, ry]] of Object.entries(reservoirs)) {
-    const d = Math.abs(x-rx)+Math.abs(y-ry);
-    if (d < bestD) { bestD=d; best=key; }
-  }
-  return best;
-}
-
-// ── LOADING OVERLAY ──────────────────────────────────────────
-function showLoading(text) {
-  document.getElementById('loadingText').textContent = text;
-  document.getElementById('loadingOverlay').classList.add('visible');
-}
-function hideLoading() {
-  document.getElementById('loadingOverlay').classList.remove('visible');
-}
-
-// ── GENERATE — calls /api/generate ───────────────────────────
-async function generate() {
-  stopOptimizer();
-  showLoading('GENERATING CITY...');
-  setBtns(false);
-
-  const c = getCfg();
-  try {
-    const res = await fetch(`${API}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        size:       c.size,
-        hotspots:   c.hotspots,
-        decay:      c.decay,
-        max_demand: c.maxDemand,
-        pipe_diam:  c.pipeDiam,
-        pipe_c:     c.pipeC,
-        power_cost: c.powerCost,
-      })
-    });
-
-    if (!res.ok) throw new Error(`Server error: ${res.status}`);
-    const data = await res.json();
-
-    city        = data.grid;
-    waterDemand = data.water_demand;
-    reservoirs  = { 'Reservoir 1': data.res1_pos };
-    legacyCost  = data.legacy_cost;
-    bestPos     = null;
-    bestCost    = Infinity;
-
-    // Reset UI
-    document.getElementById('statLegacy').textContent    = '$'+legacyCost.toFixed(2)+'/day';
-    document.getElementById('statRes1').textContent      = `(${data.res1_pos[0]}, ${data.res1_pos[1]})`;
-    document.getElementById('statCost').textContent      = '—';
-    document.getElementById('statBest').textContent      = '—';
-    document.getElementById('statSavings').textContent   = '—';
-    document.getElementById('statImprove').textContent   = '—';
-    document.getElementById('statRes2Probe').textContent = '—';
-    document.getElementById('statRes2Best').textContent  = '—';
-    document.getElementById('statEval').textContent      = '0';
-    document.getElementById('progressFill').style.width  = '0%';
-    document.getElementById('progressLabel').textContent = '0 / 0';
-    document.getElementById('scanStatus').textContent    = 'IDLE';
-
-    updateHotspotList(data.centers);
-    drawGrid();
-    setBackendStatus(true);
-
-    log(`CITY GENERATED — ${c.size}×${c.size} — ${c.hotspots} DEMAND CENTERS`, 'hi');
-    log(`RES-1 LEGACY @ (${data.res1_pos[0]}, ${data.res1_pos[1]})`);
-    log(`LEGACY DAILY COST: $${legacyCost.toFixed(2)}`, 'info');
-
-  } catch (err) {
-    log(`ERROR: ${err.message}`, 'warn');
-    setBackendStatus(false);
-  } finally {
-    hideLoading();
-    setBtns(true);
-  }
-}
-
-// ── OPTIMIZE — calls /api/optimize/stream via SSE ────────────
-function runOptimizer() {
-  if (!city) { log('NO CITY — GENERATE FIRST', 'warn'); return; }
-  if (isRunning) return;
-
-  if (mode === 1) {
-    log('SINGLE RES MODE: use GENERATE to find an optimal city — optimizer requires DUAL mode', 'warn');
-    return;
-  }
-
-  isRunning = true;
-  document.getElementById('scanStatus').textContent = 'RUN';
-  document.getElementById('footerStatus').textContent = 'OPTIMIZING...';
-  setBtns(false);
-  document.getElementById('btnStop').disabled = false;
-
-  const c = getCfg();
-  const r1 = reservoirs['Reservoir 1'];
-
-  // SSE doesn't support POST body, so we use fetch + ReadableStream
-  const body = JSON.stringify({
-    water_demand: waterDemand,
-    res1_pos:     r1,
-    pipe_diam:    c.pipeDiam,
-    pipe_c:       c.pipeC,
-    power_cost:   c.powerCost,
-    size:         c.size,
-  });
-
-  log(`OPTIMIZER STARTED — scanning ${c.size*c.size} cells via Flask backend`);
-
-  fetch(`${API}/api/optimize/stream`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body,
-  }).then(res => {
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    function read() {
-      reader.read().then(({ done, value }) => {
-        if (done) return;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop(); // keep incomplete line
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          try {
-            const evt = JSON.parse(line.slice(6));
-            handleStreamEvent(evt);
-          } catch {}
+        function getCellSize() {
+            if (!city) return 10;
+            return Math.max(4, Math.floor(Math.min(560 / city[0].length, 540 / city.length)));
         }
-        read(); // continue reading
-      });
-    }
-    read();
-  }).catch(err => {
-    log(`STREAM ERROR: ${err.message}`, 'warn');
-    setBackendStatus(false);
-    finishScan();
-  });
-}
 
-function handleStreamEvent(evt) {
-  if (evt.done) {
-    // Final result from backend
-    if (evt.best_pos) {
-      bestPos = evt.best_pos;
-      bestCost = evt.best_cost;
-      reservoirs['Reservoir 2'] = bestPos;
-      document.getElementById('statRes2Best').textContent = `(${bestPos[0]}, ${bestPos[1]})`;
-      document.getElementById('statBest').textContent = '$'+bestCost.toFixed(2);
-      updateSavings(bestCost);
-      log(`SCAN COMPLETE — OPTIMAL R2: (${bestPos[0]}, ${bestPos[1]}) $${bestCost.toFixed(2)}/day`, 'hi');
-    }
-    drawGrid();
-    finishScan();
-    return;
-  }
+        function drawGrid(probePos = null) {
+            if (!city) return;
+            const h = city.length, w = city[0].length;
+            const CELL = getCellSize();
+            canvas.width = w * CELL;
+            canvas.height = h * CELL;
 
-  // Incremental update
-  const { x, y, cost, best_cost, best_pos, progress, evaluated, total, improved } = evt;
+            let maxVal = 0;
+            for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (city[y][x] > maxVal) maxVal = city[y][x];
+            const img = ctx.createImageData(canvas.width, canvas.height);
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const t = maxVal > 0 ? city[y][x] / maxVal : 0;
+                    const [r, g, b] = magmaColor(t);
+                    for (let dy = 0; dy < CELL; dy++) {
+                        for (let dx = 0; dx < CELL; dx++) {
+                            const idx = ((y * CELL + dy) * canvas.width + (x * CELL + dx)) * 4;
+                            img.data[idx] = r; img.data[idx + 1] = g; img.data[idx + 2] = b; img.data[idx + 3] = 255;
+                        }
+                    }
+                }
+            }
+            ctx.putImageData(img, 0, 0);
 
-  document.getElementById('statCost').textContent      = '$'+cost.toFixed(2);
-  document.getElementById('statRes2Probe').textContent = `(${x}, ${y})`;
-  document.getElementById('statEval').textContent      = evaluated.toLocaleString();
-  document.getElementById('progressFill').style.width  = progress + '%';
-  document.getElementById('progressLabel').textContent = `${evaluated} / ${total}`;
+            // Tile grid overlay — subtle lines to give a map/GIS feel
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+            ctx.lineWidth = 0.5;
+            for (let y = 0; y <= h; y++) {
+                ctx.beginPath(); ctx.moveTo(0, y * CELL); ctx.lineTo(w * CELL, y * CELL); ctx.stroke();
+            }
+            for (let x = 0; x <= w; x++) {
+                ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, h * CELL); ctx.stroke();
+            }
+            ctx.restore();
 
-  if (improved) {
-    bestPos  = best_pos;
-    bestCost = best_cost;
-    document.getElementById('statBest').textContent    = '$'+best_cost.toFixed(2);
-    document.getElementById('statRes2Best').textContent = `(${best_pos[0]}, ${best_pos[1]})`;
-    updateSavings(best_cost);
-    log(`NEW OPTIMUM R2 → (${best_pos[0]},${best_pos[1]}) $${best_cost.toFixed(2)}/day`, 'hi');
-  }
+            // Voronoi boundary
+            if (mode === 2 && Object.keys(reservoirs).length === 2) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+                ctx.lineWidth = 1;
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const nr = nearestReservoir(x, y);
+                        if (x < w - 1 && nearestReservoir(x + 1, y) !== nr) {
+                            ctx.beginPath(); ctx.moveTo((x + 1) * CELL, y * CELL); ctx.lineTo((x + 1) * CELL, (y + 1) * CELL); ctx.stroke();
+                        }
+                        if (y < h - 1 && nearestReservoir(x, y + 1) !== nr) {
+                            ctx.beginPath(); ctx.moveTo(x * CELL, (y + 1) * CELL); ctx.lineTo((x + 1) * CELL, (y + 1) * CELL); ctx.stroke();
+                        }
+                    }
+                }
+                ctx.restore();
+                document.getElementById('voronoiLegend').style.display = 'flex';
+            } else {
+                document.getElementById('voronoiLegend').style.display = 'none';
+            }
 
-  // Update probe on canvas (use best R2 if found, else probe position)
-  reservoirs['Reservoir 2'] = best_pos || [x, y];
-  drawGrid([x, y]);
-}
+            // Draw reservoirs
+            const colors = { 'Reservoir 1': '#f97316', 'Reservoir 2': '#c2410c' };
+            for (const [name, pos] of Object.entries(reservoirs)) {
+                drawMarker(pos[0] * CELL + CELL / 2, pos[1] * CELL + CELL / 2, colors[name] || '#555', name === 'Reservoir 2');
+            }
+            if (probePos) {
+                drawMarker(probePos[0] * CELL + CELL / 2, probePos[1] * CELL + CELL / 2, 'rgba(249,115,22,0.4)', false);
+            }
+        }
 
-function finishScan() {
-  isRunning = false;
-  document.getElementById('scanStatus').textContent   = 'DONE';
-  document.getElementById('footerStatus').textContent = 'SCAN COMPLETE';
-  document.getElementById('progressFill').style.width = '100%';
-  setBtns(true);
-}
+        function drawMarker(px, py, color, filled) {
+            const r = 8;
+            ctx.save();
+            // Filled circle with white border — easy to see on any background
+            ctx.beginPath();
+            ctx.arc(px, py, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // White dot in center for precision
+            ctx.beginPath();
+            ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            ctx.restore();
+        }
 
-function stopOptimizer() {
-  if (sseSource) { sseSource.close(); sseSource = null; }
-  isRunning = false;
-  document.getElementById('scanStatus').textContent   = 'HALT';
-  document.getElementById('footerStatus').textContent = 'HALTED';
-  // Snap to best found so far
-  if (mode===2 && bestPos) { reservoirs['Reservoir 2'] = bestPos; drawGrid(); }
-  setBtns(true);
-  if (city) log('OPTIMIZER HALTED', 'warn');
-}
+        function nearestReservoir(x, y) {
+            let best = null, bestD = Infinity;
+            for (const [key, [rx, ry]] of Object.entries(reservoirs)) {
+                const d = Math.abs(x - rx) + Math.abs(y - ry);
+                if (d < bestD) { bestD = d; best = key; }
+            }
+            return best;
+        }
 
-// ── MANUAL COST CHECK — calls /api/cost ─────────────────────
-async function checkManualCost() {
-  if (!city) return;
-  const c = getCfg();
-  try {
-    const res = await fetch(`${API}/api/cost`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        water_demand: waterDemand,
-        reservoirs:   reservoirs,
-        pipe_diam:    c.pipeDiam,
-        pipe_c:       c.pipeC,
-        power_cost:   c.powerCost,
-      })
-    });
-    const data = await res.json();
-    return data.cost;
-  } catch { return null; }
-}
+        // ── LOADING ──────────────────────────────────────────────────
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.add('visible');
+        }
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('visible');
+        }
 
-// ── CANVAS CLICK — manual reservoir placement ────────────────
-canvas.addEventListener('click', async e => {
-  if (!city) return;
-  const rect = canvas.getBoundingClientRect();
-  const CELL = getCellSize();
-  const gx = Math.floor((e.clientX-rect.left)/(rect.width/canvas.width)/CELL);
-  const gy = Math.floor((e.clientY-rect.top)/(rect.height/canvas.height)/CELL);
-  if (gx<0||gy<0||gx>=city[0].length||gy>=city.length) return;
+        // ── GENERATE ─────────────────────────────────────────────────
+        async function generate() {
+            stopOptimizer();
+            showLoading('Generating city demand map...');
+            setBtns(false);
 
-  const key = mode===2 ? 'Reservoir 2' : 'Reservoir 1';
-  reservoirs[key] = [gx, gy];
-  drawGrid();
+            const c = getCfg();
+            try {
+                const res = await fetch(`${API}/api/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        size: c.size, hotspots: c.hotspots, decay: c.decay,
+                        max_demand: c.maxDemand, pipe_diam: 18, pipe_c: 120, power_cost: 0.12,
+                    })
+                });
+                if (!res.ok) throw new Error(`Server error ${res.status}`);
+                const data = await res.json();
 
-  const cost = await checkManualCost();
-  if (cost !== null) {
-    document.getElementById('statCost').textContent = '$'+cost.toFixed(2);
-    if (mode===2) document.getElementById('statRes2Probe').textContent = `(${gx}, ${gy})`;
-    else document.getElementById('statRes1').textContent = `(${gx}, ${gy})`;
-    log(`MANUAL ${key} @ (${gx},${gy}) — $${cost.toFixed(2)}/day`, 'info');
-  }
-});
+                city = data.grid;
+                waterDemand = data.water_demand;
+                reservoirs = { 'Reservoir 1': data.res1_pos };
+                legacyCost = data.legacy_cost;
+                bestPos = null;
+                bestCost = Infinity;
 
-canvas.addEventListener('mousemove', e => {
-  if (!city) return;
-  const rect = canvas.getBoundingClientRect();
-  const CELL = getCellSize();
-  const gx = Math.floor((e.clientX-rect.left)/(rect.width/canvas.width)/CELL);
-  const gy = Math.floor((e.clientY-rect.top)/(rect.height/canvas.height)/CELL);
-  if (gx>=0&&gy>=0&&gx<city[0].length&&gy<city.length) {
-    const d = city[gy][gx];
-    const nr = Object.keys(reservoirs).length ? nearestReservoir(gx,gy) : '—';
-    document.getElementById('hoverInfo').textContent =
-      `GRID (${gx}, ${gy}) — DEMAND: ${d} — NEAREST: ${nr}`;
-  }
-});
-canvas.addEventListener('mouseleave', () => {
-  document.getElementById('hoverInfo').textContent = 'HOVER GRID TO INSPECT • CLICK TO PLACE RESERVOIR';
-});
+                setEl('statLegacy', '$' + legacyCost.toFixed(2) + '/day');
+                setEl('statRes1', `(${(data.res1_pos[0] * getCfg().tileKm).toFixed(1)} km, ${(data.res1_pos[1] * getCfg().tileKm).toFixed(1)} km)`);
+                setEl('statCost', '—'); setEl('statBest', '—');
+                setEl('statSavings', '—'); setEl('statImprove', '—');
+                setEl('statRes2Probe', '—'); setEl('statRes2Best', '—');
+                setEl('statEval', '0');
+                document.getElementById('progressFill').style.width = '0%';
+                setEl('progressLabel', '0 / 0 locations');
+                setEl('scanStatus', 'Ready');
 
-// ── HELPERS ──────────────────────────────────────────────────
-function updateSavings(cost) {
-  if (!legacyCost) return;
-  const sav = legacyCost - cost;
-  const pct = (sav/legacyCost*100).toFixed(1);
-  document.getElementById('statSavings').textContent = sav>0 ? '$'+sav.toFixed(2)+'/day' : '—';
-  document.getElementById('statImprove').textContent = sav>0 ? `-${pct}%` : '—';
-}
+                updateCenterList(data.centers);
+                drawGrid();
+                drawAxes();
+                setBackendStatus(true);
 
-function updateHotspotList(centers) {
-  const list = document.getElementById('hotspotList');
-  list.innerHTML = '';
-  centers.forEach(([x,y],i) => {
-    const el = document.createElement('div');
-    el.className = 'hotspot-item';
-    el.innerHTML = `<span class="hotspot-name">CENTER-${String.fromCharCode(65+i)}</span><span class="hotspot-coord">(${x}, ${y})</span>`;
-    list.appendChild(el);
-  });
-}
+                log(`City generated — ${c.size}×${c.size} grid with ${c.hotspots} demand centers`, 'info');
+                log(`Reservoir 1 placed at (${data.res1_pos[0]}, ${data.res1_pos[1]})`, '');
+                log(`Baseline system cost: $${legacyCost.toFixed(2)}/day`, 'warn');
 
-function setBtns(enabled) {
-  ['btnGenerate','btnOptimize','btnStop'].forEach(id => {
-    document.getElementById(id).disabled = !enabled;
-  });
-  if (enabled) document.getElementById('btnStop').disabled = !isRunning;
-}
+            } catch (err) {
+                log(`Error: ${err.message}`, 'warn');
+                setBackendStatus(false);
+            } finally {
+                hideLoading();
+                setBtns(true);
+            }
+        }
 
-function fullReset() {
-  stopOptimizer();
-  city=null; waterDemand={}; reservoirs={}; bestPos=null; bestCost=Infinity; legacyCost=null;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ['statLegacy','statCost','statBest','statSavings','statImprove',
-   'statRes1','statRes2Probe','statRes2Best'].forEach(id => document.getElementById(id).textContent = '—');
-  document.getElementById('statEval').textContent      = '0';
-  document.getElementById('progressFill').style.width  = '0%';
-  document.getElementById('progressLabel').textContent = '0 / 0';
-  document.getElementById('hotspotList').innerHTML     = '';
-  document.getElementById('footerStatus').textContent  = 'RESET';
-  document.getElementById('scanStatus').textContent    = 'IDLE';
-  log('SYSTEM RESET', 'warn');
-}
+        // ── OPTIMIZE ─────────────────────────────────────────────────
+        function runOptimizer() {
+            if (!city) { log('Generate a city map first.', 'warn'); return; }
+            if (isRunning) return;
 
-function setMode(m) {
-  mode = m;
-  document.getElementById('tabMode1').classList.toggle('active', m===1);
-  document.getElementById('tabMode2').classList.toggle('active', m===2);
-  document.getElementById('modeLabel').textContent = m===1 ? 'SINGLE' : 'DUAL';
-  if (m===2) {
-    document.getElementById('statRes2Probe').textContent = '—';
-    document.getElementById('statRes2Best').textContent  = '—';
-  }
-}
+            isRunning = true;
+            abortController = new AbortController();
+            setEl('scanStatus', 'Running...');
+            setEl('footerStatus', 'Optimization in progress...');
+            setBtns(false);
+            document.getElementById('btnStop').disabled = false;
 
-function getCfg() {
-  return {
-    size:      +document.getElementById('gridSize').value,
-    hotspots:  +document.getElementById('hotspotCount').value,
-    decay:     +document.getElementById('decayRate').value / 10,
-    maxDemand: +document.getElementById('maxDemand').value,
-    pipeDiam:  +document.getElementById('pipeDiam').value,
-    pipeC:     +document.getElementById('pipeC').value,
-    powerCost: +document.getElementById('powerCost').value / 100,
-    speed:     +document.getElementById('animSpeed').value,
-  };
-}
+            const c = getCfg();
+            const r1 = reservoirs['Reservoir 1'];
 
-function clearLog() { document.getElementById('logArea').innerHTML = ''; }
+            log(`Starting optimization — scanning ${c.size * c.size} candidate locations`, 'info');
 
-function log(msg, type='') {
-  const area = document.getElementById('logArea');
-  const ts = new Date().toLocaleTimeString('en-US', {hour12: false});
-  const el = document.createElement('div');
-  el.className = `log-entry ${type}`;
-  el.textContent = `[${ts}] ${msg}`;
-  area.prepend(el);
-  while (area.children.length > 80) area.removeChild(area.lastChild);
-}
+            fetch(`${API}/api/optimize/stream`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    water_demand: waterDemand, res1_pos: r1,
+                    pipe_diam: 18, pipe_c: 120, power_cost: 0.12, size: c.size,
+                    stream_every: Math.max(1, Math.round(c.speed / 5)), // faster slider = stream more often
+                }),
+                signal: abortController.signal,
+            }).then(res => {
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
 
-// ── SLIDERS ──────────────────────────────────────────────────
-document.getElementById('gridSize').addEventListener('input', e =>
-  document.getElementById('gridSizeVal').textContent = e.target.value);
-document.getElementById('hotspotCount').addEventListener('input', e =>
-  document.getElementById('hotspotCountVal').textContent = e.target.value);
-document.getElementById('decayRate').addEventListener('input', e =>
-  document.getElementById('decayRateVal').textContent = (e.target.value/10).toFixed(1));
-document.getElementById('maxDemand').addEventListener('input', e =>
-  document.getElementById('maxDemandVal').textContent = e.target.value);
-document.getElementById('pipeDiam').addEventListener('input', e => {
-  document.getElementById('pipeDiamVal').textContent = e.target.value+'"';
-  refreshFooter();
-});
-document.getElementById('pipeC').addEventListener('input', e => {
-  document.getElementById('pipeCVal').textContent = e.target.value;
-  refreshFooter();
-});
-document.getElementById('powerCost').addEventListener('input', e => {
-  document.getElementById('powerCostVal').textContent = e.target.value+'¢';
-  refreshFooter();
-});
-document.getElementById('animSpeed').addEventListener('input', e =>
-  document.getElementById('animSpeedVal').textContent = e.target.value+'ms');
+                function read() {
+                    reader.read().then(({ done, value }) => {
+                        if (done || !isRunning) return;
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+                        for (const line of lines) {
+                            if (!line.startsWith('data: ')) continue;
+                            try { handleStreamEvent(JSON.parse(line.slice(6))); } catch { }
+                        }
+                        read();
+                    }).catch(() => { }); // silently swallow abort errors
+                }
+                read();
+            }).catch(err => {
+                if (err.name === 'AbortError') return; // intentional stop, stay quiet
+                log(`Connection error: ${err.message}`, 'warn');
+                setBackendStatus(false);
+                finishScan();
+            });
+        }
 
-function refreshFooter() {
-  const d = document.getElementById('pipeDiam').value;
-  const C = document.getElementById('pipeC').value;
-  const p = (+document.getElementById('powerCost').value/100).toFixed(2);
-  document.getElementById('footerPipe').textContent = `${d}" Ø · C=${C} · $${p}/kWh`;
-}
+        function handleStreamEvent(evt) {
+            if (!isRunning) return; // aborted — ignore any events still in flight
+            if (evt.done) {
+                if (evt.best_pos) {
+                    bestPos = evt.best_pos;
+                    bestCost = evt.best_cost;
+                    reservoirs['Reservoir 2'] = bestPos;
+                    const km = getTileKm();
+                    setEl('statRes2Best', `(${(bestPos[0] * km).toFixed(1)} km, ${(bestPos[1] * km).toFixed(1)} km)`);
+                    setEl('statBest', '$' + bestCost.toFixed(2) + '/day');
+                    updateSavings(bestCost);
+                    log(`Optimization complete — optimal location: (${bestPos[0]}, ${bestPos[1]})`, 'hi');
+                    log(`Optimal system cost: $${bestCost.toFixed(2)}/day`, 'hi');
+                }
+                drawGrid();
+                finishScan();
+                return;
+            }
 
-// ── CLOCK + BACKEND PING ──────────────────────────────────────
-setInterval(() => {
-  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false});
-}, 1000);
-setInterval(checkBackend, 5000);
+            const { x, y, cost, best_cost, best_pos, progress, evaluated, total, improved } = evt;
 
-// ── INIT ──────────────────────────────────────────────────────
-setMode(1);
-checkBackend();
-log('OASIS v0.3.0 INITIALIZED — Flask backend required', 'info');
-log('Run: python oasis_server.py', 'warn');
-</script>
+            setEl('statCost', '$' + cost.toFixed(2) + '/day');
+            setEl('statRes2Probe', `Grid (${x}, ${y})`);
+            setEl('statEval', evaluated.toLocaleString());
+            document.getElementById('progressFill').style.width = progress + '%';
+            setEl('progressLabel', `${evaluated.toLocaleString()} / ${total.toLocaleString()} locations`);
+
+            if (improved) {
+                bestPos = best_pos;
+                bestCost = best_cost;
+                setEl('statBest', '$' + best_cost.toFixed(2) + '/day');
+                setEl('statRes2Best', `Grid (${best_pos[0]}, ${best_pos[1]})`);
+                updateSavings(best_cost);
+                log(`New best: (${best_pos[0]}, ${best_pos[1]}) at $${best_cost.toFixed(2)}/day`, 'hi');
+            }
+
+            reservoirs['Reservoir 2'] = best_pos || [x, y];
+            drawGrid([x, y]);
+        }
+
+        function finishScan() {
+            isRunning = false;
+            setEl('scanStatus', 'Complete');
+            setEl('footerStatus', 'Optimization complete');
+            document.getElementById('progressFill').style.width = '100%';
+            setBtns(true);
+        }
+
+        function stopOptimizer() {
+            isRunning = false;
+            if (abortController) { abortController.abort(); abortController = null; }
+            setEl('scanStatus', 'Stopped');
+            setEl('footerStatus', 'Ready');
+            if (bestPos) { reservoirs['Reservoir 2'] = bestPos; drawGrid(); }
+            setBtns(true);
+            if (city) log('Optimization stopped by user.', 'warn');
+        }
+
+        // ── MANUAL COST CHECK ────────────────────────────────────────
+        async function checkManualCost() {
+            if (!city) return null;
+            try {
+                const res = await fetch(`${API}/api/cost`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        water_demand: waterDemand, reservoirs,
+                        pipe_diam: 18, pipe_c: 120, power_cost: 0.12,
+                    })
+                });
+                return (await res.json()).cost;
+            } catch { return null; }
+        }
+
+        canvas.addEventListener('click', async e => {
+            if (!city) return;
+            const rect = canvas.getBoundingClientRect();
+            const CELL = getCellSize();
+            const gx = Math.floor((e.clientX - rect.left) / (rect.width / canvas.width) / CELL);
+            const gy = Math.floor((e.clientY - rect.top) / (rect.height / canvas.height) / CELL);
+            if (gx < 0 || gy < 0 || gx >= city[0].length || gy >= city.length) return;
+
+            const key = 'Reservoir 2';
+            reservoirs[key] = [gx, gy];
+            drawGrid();
+
+            const cost = await checkManualCost();
+            if (cost !== null) {
+                setEl('statCost', '$' + cost.toFixed(2) + '/day');
+                if (mode === 2) setEl('statRes2Probe', `Grid (${gx}, ${gy})`);
+                else setEl('statRes1', `Grid (${gx}, ${gy})`);
+                log(`Manually placed ${key} at (${gx}, ${gy}) — system cost: $${cost.toFixed(2)}/day`, 'info');
+            }
+        });
+
+        canvas.addEventListener('mousemove', e => {
+            if (!city) return;
+            const rect = canvas.getBoundingClientRect();
+            const CELL = getCellSize();
+            const gx = Math.floor((e.clientX - rect.left) / (rect.width / canvas.width) / CELL);
+            const gy = Math.floor((e.clientY - rect.top) / (rect.height / canvas.height) / CELL);
+            if (gx >= 0 && gy >= 0 && gx < city[0].length && gy < city.length) {
+                const d = city[gy][gx];
+                const nr = Object.keys(reservoirs).length ? nearestReservoir(gx, gy) : '—';
+                const km = getTileKm();
+                document.getElementById('hoverInfo').textContent =
+                    `(${(gx * km).toFixed(1)} km, ${(gy * km).toFixed(1)} km)  ·  Demand index: ${d}  ·  Nearest: ${nr}`;
+            }
+        });
+        canvas.addEventListener('mouseleave', () => {
+            document.getElementById('hoverInfo').textContent = 'Hover over map to inspect · Click to place reservoir';
+        });
+
+        // ── HELPERS ──────────────────────────────────────────────────
+        function setEl(id, val) { document.getElementById(id).textContent = val; }
+
+        function updateSavings(cost) {
+            if (!legacyCost) return;
+            const sav = legacyCost - cost;
+            const pct = (sav / legacyCost * 100).toFixed(1);
+            setEl('statSavings', sav > 0 ? '$' + sav.toFixed(2) + '/day' : '—');
+            setEl('statSavingsYear', sav > 0 ? '$' + (sav * 365).toLocaleString('en-US', { maximumFractionDigits: 0 }) + '/year' : '—');
+            setEl('statImprove', sav > 0 ? pct + '% cost reduction' : '—');
+        }
+
+        function updateCenterList(centers) {
+            const list = document.getElementById('hotspotList');
+            list.innerHTML = '';
+            centers.forEach(([x, y], i) => {
+                const el = document.createElement('div');
+                el.className = 'center-item';
+                el.innerHTML = `<span class="center-name">Center ${String.fromCharCode(65 + i)}</span><span class="center-coord">(${x}, ${y})</span>`;
+                list.appendChild(el);
+            });
+        }
+
+        function setBtns(enabled) {
+            ['btnGenerate', 'btnOptimize', 'btnStop'].forEach(id =>
+                document.getElementById(id).disabled = !enabled);
+            if (enabled) document.getElementById('btnStop').disabled = !isRunning;
+        }
+
+        function fullReset() {
+            stopOptimizer();
+            city = null; waterDemand = {}; reservoirs = {}; bestPos = null; bestCost = Infinity; legacyCost = null;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ['statLegacy', 'statCost', 'statBest', 'statSavings', 'statSavingsYear', 'statImprove',
+                'statRes1', 'statRes2Probe', 'statRes2Best'].forEach(id => setEl(id, '—'));
+            setEl('statEval', '0');
+            document.getElementById('progressFill').style.width = '0%';
+            setEl('progressLabel', '0 / 0 locations');
+            setEl('scanStatus', 'Idle');
+            setEl('footerStatus', 'Ready');
+            document.getElementById('hotspotList').innerHTML = '';
+            log('System reset.', 'warn');
+        }
+
+        function getTileKm() {
+            return +document.getElementById('tileSize').value / 10; // slider 1-20 → 0.1–2.0 km
+        }
+
+        function drawAxes() {
+            if (!city) return;
+            const h = city.length, w = city[0].length;
+            const km = getTileKm();
+            const totalW = (w * km).toFixed(1);
+            const totalH = (h * km).toFixed(1);
+
+            // X axis — 5 evenly spaced labels
+            const xEl = document.getElementById('axisX');
+            xEl.innerHTML = '';
+            const xSteps = 5;
+            for (let i = 0; i <= xSteps; i++) {
+                const span = document.createElement('span');
+                span.textContent = (i * totalW / xSteps).toFixed(1) + ' km';
+                xEl.appendChild(span);
+            }
+
+            // Y axis — 5 evenly spaced labels (top to bottom = 0 to max)
+            const yEl = document.getElementById('axisY');
+            yEl.innerHTML = '';
+            const ySteps = 5;
+            for (let i = 0; i <= ySteps; i++) {
+                const span = document.createElement('span');
+                span.textContent = (i * totalH / ySteps).toFixed(1) + ' km';
+                yEl.appendChild(span);
+            }
+
+            // axes are drawn, no scenario bar to update
+        }
+
+        function getCfg() {
+            return {
+                size: +document.getElementById('gridSize').value,
+                hotspots: +document.getElementById('hotspotCount').value,
+                decay: +document.getElementById('decayRate').value / 10,
+                maxDemand: +document.getElementById('maxDemand').value,
+                speed: +document.getElementById('animSpeed').value,
+                tileKm: getTileKm(),
+            };
+        }
+
+        function clearLog() { document.getElementById('logArea').innerHTML = ''; }
+
+        function log(msg, type = '') {
+            const area = document.getElementById('logArea');
+            const ts = new Date().toLocaleTimeString('en-US', { hour12: true });
+            const el = document.createElement('div');
+            el.className = `log-entry ${type}`;
+            el.textContent = `${ts}  ${msg}`;
+            area.prepend(el);
+            while (area.children.length > 80) area.removeChild(area.lastChild);
+        }
+
+        // ── SLIDERS ──────────────────────────────────────────────────
+        document.getElementById('gridSize').addEventListener('input', e =>
+            setEl('gridSizeVal', e.target.value));
+        document.getElementById('hotspotCount').addEventListener('input', e =>
+            setEl('hotspotCountVal', e.target.value));
+        document.getElementById('decayRate').addEventListener('input', e =>
+            setEl('decayRateVal', (e.target.value / 10).toFixed(1)));
+        document.getElementById('maxDemand').addEventListener('input', e =>
+            setEl('maxDemandVal', e.target.value));
+        document.getElementById('animSpeed').addEventListener('input', e =>
+            setEl('animSpeedVal', e.target.value + 'ms'));
+        document.getElementById('tileSize').addEventListener('input', e => {
+            setEl('tileSizeVal', (e.target.value / 10).toFixed(1) + ' km');
+            drawAxes();
+        });
+
+        // ── CLOCK + PING ─────────────────────────────────────────────
+        setInterval(() => {
+            document.getElementById('clock').textContent =
+                new Date().toLocaleTimeString('en-US', { hour12: true });
+        }, 1000);
+        setInterval(checkBackend, 5000);
+
+        // ── INIT ─────────────────────────────────────────────────────
+        checkBackend();
+        log('OASIS initialized — generate a city map to begin.', 'info');
+    </script>
 </body>
 </html>
