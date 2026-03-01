@@ -12,6 +12,7 @@ To run:
 
 Main Features:
 - You can decide on Grid Size, Centers of Demand, Demand Decay Rate, and Peak Demand.
+- You will notice a Voronoi Partition indicating which tiles are covered by each Reservoir
 - For the animation feature, you can alter the speed at which the animation plays, and the measurement per tile, which changes the overall predicted outcome.
 
 To use:
