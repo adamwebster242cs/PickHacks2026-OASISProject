@@ -182,39 +182,39 @@ def find_best_second_reservoir(Water_Demand, current_reservoirs):
     
     return best_coord, min_total_cost
     
-def visualize_city(grid, Reservoirs):
-    plt.clf() 
+# def visualize_city(grid, Reservoirs):
+#     plt.clf() 
     
-    # Drawing the demand heatmap
-    plt.imshow(grid, cmap='magma', origin='upper')
-    plt.colorbar(label='Water Demand')
+#     # Drawing the demand heatmap
+#     plt.imshow(grid, cmap='magma', origin='upper')
+#     plt.colorbar(label='Water Demand')
     
-    # 2. Drawing the boundary lines
-    # This checks every tile to see if its neighbor belongs to a different reservoir
-    for y in range(50):
-        for x in range(50):
-            nearest = get_nearest_reservoir((x, y), Reservoirs)
-            # Check right neighbor
-            if x < 49:
-                if get_nearest_reservoir((x+1, y), Reservoirs) != nearest:
-                    plt.plot([x + 0.5, x + 0.5], [y - 0.5, y + 0.5], color='white', lw=1, alpha=0.6)
-            # Check bottom neighbor
-            if y < 49:
-                if get_nearest_reservoir((x, y+1), Reservoirs) != nearest:
-                    plt.plot([x - 0.5, x + 0.5], [y + 0.5, y + 0.5], color='white', lw=1, alpha=0.6)
+#     # 2. Drawing the boundary lines
+#     # This checks every tile to see if its neighbor belongs to a different reservoir
+#     for y in range(50):
+#         for x in range(50):
+#             nearest = get_nearest_reservoir((x, y), Reservoirs)
+#             # Check right neighbor
+#             if x < 49:
+#                 if get_nearest_reservoir((x+1, y), Reservoirs) != nearest:
+#                     plt.plot([x + 0.5, x + 0.5], [y - 0.5, y + 0.5], color='white', lw=1, alpha=0.6)
+#             # Check bottom neighbor
+#             if y < 49:
+#                 if get_nearest_reservoir((x, y+1), Reservoirs) != nearest:
+#                     plt.plot([x - 0.5, x + 0.5], [y + 0.5, y + 0.5], color='white', lw=1, alpha=0.6)
     
     # 3. Plot the reservoirs
-    colors = {'Reservoir 1': 'cyan', 'Reservoir 2': 'blue'}
+#   colors = {'Reservoir 1': 'cyan', 'Reservoir 2': 'blue'}
     
-    for name, pos in Reservoirs.items():
+#    for name, pos in Reservoirs.items():
         # Get color from dict, default to 'white' if name is unexpected
-        dot_color = colors.get(name, 'white') 
-        plt.plot(pos[0], pos[1], marker='*', color=dot_color, markersize=15, label=name)
+#        dot_color = colors.get(name, 'white') 
+#        plt.plot(pos[0], pos[1], marker='*', color=dot_color, markersize=15, label=name)
     
-    plt.title("Legacy Infrastructure & Optimal Expansion")
-    plt.legend(loc='upper right')
-    plt.draw()
-    plt.pause(0.1)
+#    plt.title("Legacy Infrastructure & Optimal Expansion")
+#    plt.legend(loc='upper right')
+#    plt.draw()
+#    plt.pause(0.1)
 
 
 
@@ -407,3 +407,4 @@ if __name__ == "__main__":
     print("  OASIS SERVER — http://localhost:5000")
     print("=" * 50)
     app.run(debug=True, port=5000, threaded=True)
+
